@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"regexp"
 )
 
@@ -11,7 +11,7 @@ func TransformBody(postBody string, route_config map[string]interface{}) (ret st
 	find, exist1 := route_config["regexp_find"]
 	replace, exist2 := route_config["regexp_replace"]
 	if exist1 && !exist2 {
-		log.Printf("No regexp_replace in regexp_replace %d", route_config["in"])
+		fmt.Printf("No regexp_replace in regexp_replace %d\n", route_config["in"])
 	}
 	if !exist1 || !exist2 {
 		return postBody

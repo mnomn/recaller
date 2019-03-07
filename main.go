@@ -13,23 +13,23 @@ import (
 	"container/list"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/json"
-	"flag"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gorilla/mux"
 	"html/template"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
 )
 
-var config map[string]interface{}
-var urls []map[string]interface{}
+//var config map[string]interface{}
+var address string
+var main_username string
+var main_password string
+
+var routes []map[string]interface{}
 
 var exedir string
 
@@ -42,7 +42,6 @@ func logCall(in string, out_log string, res string) {
 }
 
 func handleNothing(w http.ResponseWriter, r *http.Request) {
-	// fmt.Printf("DO NOTHING for %v\n", r.URL.Path)
 }
 
 func pubMqtt(postString string, url_config map[string]interface{}) {
@@ -56,14 +55,15 @@ func pubMqtt(postString string, url_config map[string]interface{}) {
 	// Mandatory parameters
 	temp := url_config["out"]
 	if temp == nil {
-		log.Fatal("No 'out' parameter (broker url)")
+		fmt.Printf("No 'out' parameter (broker url) \n")
+		os.Exit(1)
 	}
 	out = temp.(string)
 	opts := MQTT.NewClientOptions().AddBroker(out)
 
 	temp = url_config["mqtt_topic"]
 	if temp == nil {
-		log.Printf("No 'mqtt_topic' parameter. Using input path")
+		fmt.Println("No 'mqtt_topic' parameter. Using input path")
 		temp = url_config["in"]
 	}
 	mqtt_topic = temp.(string)
@@ -117,12 +117,13 @@ func pubMqtt(postString string, url_config map[string]interface{}) {
 	c := MQTT.NewClient(opts)
 
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatal(token.Error())
+		fmt.Println(token.Error())
+		os.Exit(1)
 	} else {
 		token = c.Publish(mqtt_topic, 0, false, postString)
 		token.Wait()
 		if token.Error() != nil {
-			fmt.Println("posted token err:", token.Error())
+			fmt.Printf("posted token err: %v\n", token.Error())
 		}
 	}
 	c.Disconnect(250)
@@ -187,12 +188,10 @@ func routeTraffic(path string, jbody string) {
 	//var val float32
 	var routed int
 	fmt.Printf(path)
-	// fmt.Printf("Trying to route %v\n", path)
-	for _, b := range urls {
+	for _, b := range routes {
 		tmp := b["in"]
 		inurl, ok := tmp.(string)
 		if ok && strings.Index(path, inurl) == 0 {
-			//fmt.Println("Found match")
 
 			newBody := TransformBody(jbody, b)
 
@@ -257,11 +256,9 @@ func routeTraffic(path string, jbody string) {
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
 	// Verify auth
-	bu, bu_exist := config["in_username"]
-	bp, bp_exist := config["in_password"]
-	if bu_exist && bp_exist {
+	if len(main_username) > 0 && len(main_password) > 0 {
 		u, p, ok := r.BasicAuth()
-		if !ok || u != bu || p != bp {
+		if !ok || u != main_username || p != main_password {
 			http.Error(w, "Invalid login", 401)
 		}
 	}
@@ -279,11 +276,10 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func handleWeb(w http.ResponseWriter, r *http.Request) {
 	htmltemp := filepath.Join(exedir, "templates", "index.html")
 	t, err := template.ParseFiles(htmltemp)
-	if (err != nil) {
+	if err != nil {
 		fmt.Printf("Cannot find html template\n")
 		fmt.Fprintf(w, "Oh, no! Cannot show web page!\n")
 		return
@@ -291,49 +287,22 @@ func handleWeb(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, nil)
 }
 
-func readConfig() {
+func main() {
 	// Get prog dir and thereby html template dir
 	exedir = filepath.Dir(os.Args[0])
 
-	// TODO: Support folder with many json files in.
-	confdir := flag.String("conf", "", "Configuration file")
-	flag.Parse()
-	if len(*confdir) < 1 {
-		u, _ := user.Current()
-		*confdir = u.HomeDir + "/.route2cloud.json"
-	}
-	raw, err := ioutil.ReadFile(*confdir)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := json.Unmarshal(raw, &config); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Route data to cloud, config %v\n", *confdir)
-	u2 := config["urls"].([]interface{})
-	for _, v := range u2 {
-		urls = append(urls, v.(map[string]interface{}))
-	}
-}
-
-func main() {
 	readConfig()
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleWeb).Methods("GET")
 	r.HandleFunc("/{urlin}", handleRoot).Methods("POST")
-	//http.HandleFunc("/favicon.ico", handleNothing)
 	r.HandleFunc("/favicon.ico", handleNothing)
-	//http.HandleFunc("/", handleRoot)
 	http.Handle("/", r)
 
-	addr := ":8080"
-	tmp, addr_cfg_exist := config["address"]
-	if addr_cfg_exist {
-		addr = tmp.(string)
+	if address == "" {
+		address = ":8080"
 	}
 
-	fmt.Printf("Serve address %v\n", addr)
+	fmt.Printf("Serve address %v\n", address)
 
-	log.Fatal(http.ListenAndServe(addr, r))
-	fmt.Printf("Bye!")
+	http.ListenAndServe(address, r) // Blocking function
 }
