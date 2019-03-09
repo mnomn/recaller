@@ -2,7 +2,6 @@
 
 A service that listens for http post and sends them on to another url/protocol. It is designed for small devices (IoT) that cannot handle some protocols/schemas or some types of security. It is possible to get incomming HTTP and send it on as HTTPS with certificates or user:passwords, or to an mqtt topic.
 
-
 ## Build
 First do `go mod init github.com/mnomn/route2cloud`, 
 then build using `go build` or use `make`

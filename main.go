@@ -28,6 +28,7 @@ import (
 var address string
 var main_username string
 var main_password string
+var globalDebug bool
 
 var routes []map[string]interface{}
 
@@ -44,7 +45,7 @@ func logCall(in string, out_log string, res string) {
 func handleNothing(w http.ResponseWriter, r *http.Request) {
 }
 
-func pubMqtt(postString string, url_config map[string]interface{}) {
+func pubMqtt(postString string, url_config map[string]interface{}, debug bool) {
 	var root_ca_file string
 	var cert_file string
 	var private_key_file string
@@ -63,7 +64,9 @@ func pubMqtt(postString string, url_config map[string]interface{}) {
 
 	temp = url_config["mqtt_topic"]
 	if temp == nil {
-		fmt.Println("No 'mqtt_topic' parameter. Using input path")
+		if globalDebug || debug {
+			fmt.Println("No 'mqtt_topic' parameter. Using input path as topic")
+		}
 		temp = url_config["in"]
 	}
 	mqtt_topic = temp.(string)
@@ -80,7 +83,9 @@ func pubMqtt(postString string, url_config map[string]interface{}) {
 	temp = url_config["root_ca"]
 	if temp != nil {
 		root_ca_file = temp.(string)
-		fmt.Printf("Using root CA")
+		if globalDebug || debug {
+			fmt.Printf("Using root CA")
+		}
 		_, err := os.Stat(root_ca_file)
 		if err != nil {
 			fmt.Printf("root_ca err%v\n", err)
@@ -107,7 +112,9 @@ func pubMqtt(postString string, url_config map[string]interface{}) {
 	cid := "ClientID"
 	opts.SetClientID(cid)
 	if root_ca_file != "" || cert_file != "" || private_key_file != "" {
-		fmt.Printf("postMqtt %v\n%v\n%v\n%v\n", postString, root_ca_file, cert_file, private_key_file)
+		if globalDebug || debug {
+			fmt.Printf("Mqtt cert files%v\n%v\n%v\n", root_ca_file, cert_file, private_key_file)
+		}
 		tlsConf, err := makeTlsConfig(root_ca_file, cert_file, private_key_file)
 		fmt.Printf("TLS CFG ERR: %v\n", err)
 		opts.SetTLSConfig(tlsConf)
@@ -115,6 +122,10 @@ func pubMqtt(postString string, url_config map[string]interface{}) {
 	}
 
 	c := MQTT.NewClient(opts)
+
+	if globalDebug || debug {
+		fmt.Printf("Mqtt data: %v\n", postString)
+	}
 
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
 		fmt.Println(token.Error())
@@ -187,11 +198,19 @@ func getCertPool(pemPath string) (*x509.CertPool, error) {
 func routeTraffic(path string, jbody string) {
 	//var val float32
 	var routed int
-	fmt.Printf(path)
+	if globalDebug {
+		fmt.Printf("Incomming path: %v\n", path)
+	}
 	for _, b := range routes {
 		tmp := b["in"]
 		inurl, ok := tmp.(string)
+		_, debug := b["debug"] // Optional. Debug print
+
 		if ok && strings.Index(path, inurl) == 0 {
+
+			if globalDebug || debug {
+				fmt.Printf("Path %v configured\n", path)
+			}
 
 			newBody := TransformBody(jbody, b)
 
@@ -201,7 +220,7 @@ func routeTraffic(path string, jbody string) {
 				prot = tmp.(string)
 			}
 			if exist && strings.Index("mqtt", prot) == 0 {
-				pubMqtt(string(newBody), b)
+				pubMqtt(string(newBody), b, debug)
 				routed += 1
 				return
 			}
@@ -224,7 +243,9 @@ func routeTraffic(path string, jbody string) {
 
 			var client *http.Client
 			if temp != nil {
-				fmt.Println("Found root_ca")
+				if globalDebug || debug {
+					fmt.Println("Found root_ca")
+				}
 				ca := temp.(string)
 				temp = b["cert"]
 				cert := temp.(string)
@@ -250,7 +271,9 @@ func routeTraffic(path string, jbody string) {
 		}
 	}
 	if routed == 0 {
-		fmt.Printf("URL %v not routed.\n", path)
+		if globalDebug {
+			fmt.Printf("URL %v not routed.\n", path)
+		}
 	}
 }
 

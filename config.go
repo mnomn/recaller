@@ -57,6 +57,7 @@ func readConfigFiles(confFlag *string) (err error) {
 		if exist {
 			main_password = tmp.(string)
 		}
+		_, globalDebug = config["debug"] // Optional. Debug print
 
 		tmp, exist = config["routes"]
 		if exist {
