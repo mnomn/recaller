@@ -169,7 +169,11 @@ func pubMqtt(postString string, url_config map[string]interface{}, debug bool) {
 		fmt.Println(token.Error())
 		os.Exit(1)
 	} else {
-		token = c.Publish(mqtt_topic, 0, false, postString)
+		val, retain := url_config["retain"]
+		if retain {
+			retain = val.(bool)
+		}
+		token = c.Publish(mqtt_topic, 0, retain, postString)
 		token.Wait()
 		if token.Error() != nil {
 			fmt.Printf("posted token err: %v\n", token.Error())
