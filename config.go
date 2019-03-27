@@ -28,10 +28,10 @@ func readConfigFiles(confFlag *string) (err error) {
 
 	for _, file := range files {
 		name := file.Name()
-		fmt.Println("Read config " + name)
 		if !strings.HasSuffix(name, ".conf") {
 			continue
 		}
+		fmt.Println("Read config " + name)
 
 		var config map[string]interface{}
 

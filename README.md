@@ -11,6 +11,6 @@ It will cross compile and install on the raspberry pi, including generating and 
 Starting and enabling the service must be done manually.
 
 ## Install and Config
-You must have a config folder '~/.route2cloude with conf files. See 'route2cloud.conf' and test_conf for some examples.
+You must have a folder with conf files (default '~/.route2cloude'). See test_conf for some examples.
 
 On linux you can generate a systemd file to starting and stoping using systemctl.

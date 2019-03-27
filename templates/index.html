@@ -8,5 +8,23 @@
 </head>
 <body>
 	<h1>Route2cloud web UI</h1>
+
+	<div id=list></div>
+	<script>
+	fetch('./api')
+  .then(function(response) {
+		console.log("response " + response.status)
+		document.getElementById('list').innerHTML = "RRR!";
+		return response.json();
+	})
+  .then(function(myJson) {
+	  console.log(JSON.stringify(myJson));
+		document.getElementById('list').innerHTML = myJson.Val1 + " AND " + myJson.Val2;
+	});
+
+
+	document.getElementById('list').innerHTML = "HEPxP!";
+	</script>
+
 </body>
 </html>

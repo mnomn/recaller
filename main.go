@@ -13,6 +13,7 @@ import (
 	"container/list"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gorilla/mux"
@@ -310,6 +311,17 @@ func handleWeb(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, nil)
 }
 
+func handleApi(w http.ResponseWriter, r *http.Request) {
+	type Test1 struct {
+		Val1 string
+		Val2 string
+	}
+	test1 := Test1{"kalle", "kalas"}
+	js, _ := json.Marshal(test1)
+	//fmt.Fprintf(w,"api test!")
+	w.Write(js)
+}
+
 func main() {
 	// Get prog dir and thereby html template dir
 	exedir = filepath.Dir(os.Args[0])
@@ -317,15 +329,19 @@ func main() {
 	readConfig()
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleWeb).Methods("GET")
+	r.HandleFunc("/api", handleApi).Methods("GET")
 	r.HandleFunc("/{urlin}", handleRoot).Methods("POST")
 	r.HandleFunc("/favicon.ico", handleNothing)
 	http.Handle("/", r)
 
 	if address == "" {
-		address = ":8080"
+		address = ":8222"
 	}
 
 	fmt.Printf("Serve address %v\n", address)
 
-	http.ListenAndServe(address, r) // Blocking function
+	e := http.ListenAndServe(address, r) // Blocking function
+	if (e != nil) {
+		fmt.Printf( "Serve failed %v\n", e)
+	}
 }
