@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Route2Cloud</title>
 </head>
 <body>
 	<h1>Route2cloud web UI</h1>
 
+	<h2>Some routes</h2>
 	<div id=list></div>
 	<script>
 	fetch('./api')
@@ -19,7 +20,15 @@
 	})
   .then(function(myJson) {
 	  console.log(JSON.stringify(myJson));
-		document.getElementById('list').innerHTML = myJson.Val1 + " AND " + myJson.Val2;
+		var ll = myJson.length;
+    var list = "<ul>";
+		while ( ll-- ) {
+			//ll--;
+			list = list + "<li>" + myJson[ll] + "</li>";
+		}
+		list = list + "</ol>"
+
+		document.getElementById('list').innerHTML = list; //myJson[ll-1] + " AND<br> " + myJson[ll-2];
 	});
 
 

@@ -10,7 +10,6 @@ Web interface for monitoring the action.
 
 */
 import (
-	"container/list"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -35,12 +34,18 @@ var routes []map[string]interface{}
 
 var exedir string
 
-var webmess = list.New()
+var webmess = make([]string, 3)
 
 func logCall(in string, out_log string, res string) {
 	fmt.Printf("In:  %v Out: %v Res: %v\n", in, out_log, res)
 	// Attach to weebmess.
-	webmess.PushFront(in + out_log)
+	webmess = append(webmess, in + out_log)
+	if len(webmess) >5 {
+		webmess = webmess[1:]
+	}
+	for _,a := range webmess {
+		fmt.Printf("Webmess %v\n", a)
+	}
 }
 
 func handleNothing(w http.ResponseWriter, r *http.Request) {
@@ -72,6 +77,7 @@ func pubMqtt(postString string, url_config map[string]interface{}, debug bool) {
 	}
 	mqtt_topic = temp.(string)
 
+	logCall(out, mqtt_topic, "")
 	fmt.Printf("Route to mqtt broker %v, topic %v\n", out, mqtt_topic)
 	// Optional parameters
 	temp = url_config["username"]
@@ -312,13 +318,8 @@ func handleWeb(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleApi(w http.ResponseWriter, r *http.Request) {
-	type Test1 struct {
-		Val1 string
-		Val2 string
-	}
-	test1 := Test1{"kalle", "kalas"}
-	js, _ := json.Marshal(test1)
-	//fmt.Fprintf(w,"api test!")
+	js, _ := json.Marshal(webmess)
+
 	w.Write(js)
 }
 
@@ -339,6 +340,9 @@ func main() {
 	}
 
 	fmt.Printf("Serve address %v\n", address)
+
+	// Add some weblogging for test
+	logCall("ABBA", "BANAN", "OK")
 
 	e := http.ListenAndServe(address, r) // Blocking function
 	if (e != nil) {
