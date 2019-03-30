@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 //var config map[string]interface{}
@@ -34,13 +35,43 @@ var routes []map[string]interface{}
 
 var exedir string
 
-var webmess = make([]string, 3)
+type JsonTime struct {
+	time.Time
+}
+
+func (t JsonTime)MarshalJSON() ([]byte, error) {
+	//	stamp := fmt.Sprintf("\"%s\"", t.Format("Mon Jan _2"))
+	stamp := "\"\""
+	fmt.Printf("YEAR  %v \n", t.Year());
+	now := time.Now();
+	if (t.Year() < 2000) {
+		stamp = "\"Old times\""
+	} else if t.Year() != now.Year() {
+		stamp = "\"last year\""
+	} else if t.Day() == now.Day() -1 { // Todo: New month.
+		stamp = fmt.Sprintf("\"Yesterday %s\"", t.Format("15:04")) 
+	} else if now.Day() == t.Day() {
+		stamp = fmt.Sprintf("\"Today %s\"", t.Format("15:04"))
+	} else { // Generic time stamp
+		stamp = fmt.Sprintf("\"Today %s\"", t.Format("01-02 15:04"))
+	}
+	return []byte(stamp), nil
+}
+
+type WebMess struct {
+	Time JsonTime
+	Message string
+}
+
+var webmess = make([]WebMess, 3)
+
 
 func logCall(in string, out_log string, res string) {
 	fmt.Printf("In:  %v Out: %v Res: %v\n", in, out_log, res)
 	// Attach to weebmess.
-	webmess = append(webmess, in + out_log)
-	if len(webmess) >5 {
+	wm := WebMess{JsonTime{time.Now()}, in }
+	webmess = append( webmess, wm)
+	if len(webmess) > 20 {
 		webmess = webmess[1:]
 	}
 	for _,a := range webmess {
@@ -319,7 +350,7 @@ func handleWeb(w http.ResponseWriter, r *http.Request) {
 
 func handleApi(w http.ResponseWriter, r *http.Request) {
 	js, _ := json.Marshal(webmess)
-
+	logCall("TEST1", "test2", "OK");
 	w.Write(js)
 }
 

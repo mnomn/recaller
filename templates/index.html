@@ -7,33 +7,35 @@
     <title>Route2Cloud</title>
 </head>
 <body>
-	<h1>Route2cloud web UI</h1>
+  <h1>Route2cloud web UI</h1>
 
-	<h2>Some routes</h2>
-	<div id=list></div>
-	<script>
-	fetch('./api')
-  .then(function(response) {
-		console.log("response " + response.status)
-		document.getElementById('list').innerHTML = "RRR!";
-		return response.json();
-	})
-  .then(function(myJson) {
-	  console.log(JSON.stringify(myJson));
-		var ll = myJson.length;
-    var list = "<ul>";
-		while ( ll-- ) {
-			//ll--;
-			list = list + "<li>" + myJson[ll] + "</li>";
-		}
-		list = list + "</ol>"
+  <h2>Some routes</h2>
+  <div id=list></div>
+  <script>
+    fetch('./api')
+    .then(function(response) {
+      console.log("response " + response.status)
+      document.getElementById('list').innerHTML = "RRR!";
+      return response.json();
+    })
+    .then(function(myJson) {
+      console.log(JSON.stringify(myJson));
+      var ll = myJson.length;
+      var list = "<ul>";
+      while ( ll-- ) {
+        var ob = myJson[ll]
+        list = list + "<li><div>" + myJson[ll].Time + "</div>";
+        list = list + "<div>"+ myJson[ll].Message + "</div></li>";
+      }
+      list = list + "</ol>";
 
-		document.getElementById('list').innerHTML = list; //myJson[ll-1] + " AND<br> " + myJson[ll-2];
-	});
+      document.getElementById('list').innerHTML = list;
+
+    });
 
 
-	document.getElementById('list').innerHTML = "HEPxP!";
-	</script>
+    document.getElementById('list').innerHTML = "HEPxP!";
+    </script>
 
 </body>
 </html>
