@@ -42,7 +42,6 @@ type JsonTime struct {
 func (t JsonTime)MarshalJSON() ([]byte, error) {
 	//	stamp := fmt.Sprintf("\"%s\"", t.Format("Mon Jan _2"))
 	stamp := "\"\""
-	fmt.Printf("YEAR  %v \n", t.Year());
 	now := time.Now();
 	if (t.Year() < 2000) {
 		stamp = "\"Old times\""
@@ -60,23 +59,27 @@ func (t JsonTime)MarshalJSON() ([]byte, error) {
 
 type WebMess struct {
 	Time JsonTime
-	Message string
+	Input string
+	Output string
+	OutProtocol string
 }
 
 var webmess = make([]WebMess, 3)
 
 
-func logCall(in string, out_log string, res string) {
+func logCall(in string, out_log string, outProt string, res string) {
 	fmt.Printf("In:  %v Out: %v Res: %v\n", in, out_log, res)
 	// Attach to weebmess.
-	wm := WebMess{JsonTime{time.Now()}, in }
+	wm := WebMess{JsonTime{time.Now()}, in , out_log, outProt}
 	webmess = append( webmess, wm)
 	if len(webmess) > 20 {
 		webmess = webmess[1:]
 	}
+	/*
 	for _,a := range webmess {
 		fmt.Printf("Webmess %v\n", a)
 	}
+	*/
 }
 
 func handleNothing(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +100,9 @@ func pubMqtt(postString string, url_config map[string]interface{}, debug bool) {
 		os.Exit(1)
 	}
 	out = temp.(string)
+
+	inurl := url_config["in"]
+
 	opts := MQTT.NewClientOptions().AddBroker(out)
 
 	temp = url_config["mqtt_topic"]
@@ -108,7 +114,7 @@ func pubMqtt(postString string, url_config map[string]interface{}, debug bool) {
 	}
 	mqtt_topic = temp.(string)
 
-	logCall(out, mqtt_topic, "")
+	logCall(inurl.(string), mqtt_topic, "mqtt", "")
 	fmt.Printf("Route to mqtt broker %v, topic %v\n", out, mqtt_topic)
 	// Optional parameters
 	temp = url_config["username"]
@@ -209,7 +215,6 @@ func makeTlsConfig(cafile, cert, key string) (*tls.Config, error) {
 		}
 		TLSConfig.ClientAuth = tls.RequireAndVerifyClientCert
 		TLSConfig.ClientCAs = certPool
-
 	}
 	if key != "" {
 		if cert == "" {
@@ -243,10 +248,10 @@ func routeTraffic(path string, jbody string) {
 	if globalDebug {
 		fmt.Printf("Incomming path: %v\n", path)
 	}
-	for _, b := range routes {
-		tmp := b["in"]
+	for _, route := range routes {
+		tmp := route["in"]
 		inurl, ok := tmp.(string)
-		_, debug := b["debug"] // Optional. Debug print
+		_, debug := route["debug"] // Optional. Debug print
 
 		if ok && strings.Index(path, inurl) == 0 {
 
@@ -254,34 +259,34 @@ func routeTraffic(path string, jbody string) {
 				fmt.Printf("Path %v configured\n", path)
 			}
 
-			newBody := TransformBody(jbody, b)
+			newBody := TransformBody(jbody, route)
 
-			tmp, exist := b["protocol"]
+			tmp, exist := route["protocol"]
 			var prot string
 			if exist {
 				prot = tmp.(string)
 			}
 			if exist && strings.Index("mqtt", prot) == 0 {
-				pubMqtt(string(newBody), b, debug)
+				pubMqtt(string(newBody), route, debug)
 				routed += 1
 				return
 			}
 
 			// HTTP Post is default protocol
-			tmp = b["out"]
+			tmp = route["out"]
 			outurl, _ := tmp.(string)
 			outlog, _ := tmp.(string)
 			fmt.Printf("Route %v to %v using http POST %v\n", inurl, outurl[0:20], outlog)
 			req, err := http.NewRequest("POST", outurl, strings.NewReader(newBody))
-			hk, hk_exist := b["header_key"]
-			hv, hv_exist := b["header_value"]
+			hk, hk_exist := route["header_key"]
+			hv, hv_exist := route["header_value"]
 			if hk_exist && hv_exist {
 				key := hk.(string)
 				val := hv.(string)
 				req.Header.Set(key, val)
 			}
 			req.Header.Set("Content-Type", "application/json")
-			temp := b["root_ca"]
+			temp := route["root_ca"]
 
 			var client *http.Client
 			if temp != nil {
@@ -289,9 +294,9 @@ func routeTraffic(path string, jbody string) {
 					fmt.Println("Found root_ca")
 				}
 				ca := temp.(string)
-				temp = b["cert"]
+				temp = route["cert"]
 				cert := temp.(string)
-				temp = b["private_key"]
+				temp = route["private_key"]
 				private_key := temp.(string)
 				tc, _ := makeTlsConfig(ca, cert, private_key)
 
@@ -308,7 +313,7 @@ func routeTraffic(path string, jbody string) {
 			}
 			defer resp.Body.Close()
 
-			logCall(inurl, outurl, resp.Status)
+			logCall(inurl, outurl, "POST", resp.Status)
 			routed += 1
 		}
 	}
@@ -354,7 +359,7 @@ func handleWeb(w http.ResponseWriter, r *http.Request) {
 
 func handleApi(w http.ResponseWriter, r *http.Request) {
 	js, _ := json.Marshal(webmess)
-	logCall("TEST1", "test2", "OK");
+	/* For debug logCall("inUrl", "somewhere/else", "ftp", "OK"); */
 	w.Write(js)
 }
 
@@ -377,7 +382,7 @@ func main() {
 	fmt.Printf("Serve address %v\n", address)
 
 	// Add some weblogging for test
-	logCall("ABBA", "BANAN", "OK")
+	logCall("Start system", "route2cloud", "-", "OK")
 
 	e := http.ListenAndServe(address, r) // Blocking function
 	if (e != nil) {

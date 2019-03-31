@@ -3,13 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Route2Cloud</title>
 </head>
 <body>
-  <h1>Route2cloud web UI</h1>
-
-  <h2>Some routes</h2>
+<div class="container">
+  <div class="row">
+    <div class="col-sm">
+      <div class="jumbotron">
+        <h1>Route2cloud web UI</h1>
+      </div>
+    </div> <!--col-->
+  </div> <!--row-->
+  <div class="row">
+      <div class="col-md">
+  <h3>Some routes</h3>
   <div id=list></div>
   <script>
     fetch('./api')
@@ -21,11 +30,19 @@
     .then(function(myJson) {
       console.log(JSON.stringify(myJson));
       var ll = myJson.length;
-      var list = "<ul>";
+      var list = '<ul class="list-group">';
       while ( ll-- ) {
         var ob = myJson[ll]
-        list = list + "<li><div>" + myJson[ll].Time + "</div>";
-        list = list + "<div>"+ myJson[ll].Message + "</div></li>";
+        list = list + "<li class='list-group-item'><div class='d-inline mr-2'><b>" + myJson[ll].Time + ":</b></div>";
+        list = list + "<div class='d-inline mr-2'>"+ myJson[ll].Input + "</div><div class=d-inline>";
+        if (myJson[ll].Output.length > 0) {
+          if (myJson[ll].OutProtocol.length  > 0) {
+            list = list + myJson[ll].OutProtocol + ":" + myJson[ll].Output;
+          } else {
+            list = myJson[ll].Output;
+          }
+        }
+        list = list + "</div></li>"
       }
       list = list + "</ol>";
 
@@ -36,6 +53,11 @@
 
     document.getElementById('list').innerHTML = "HEPxP!";
     </script>
-
+    </div> <!--col--
+    <div class="col-md">
+      <div>Test col 2</div>
+    </div> --col-->
+  </div> <!--row-->
+<div class="container">
 </body>
 </html>
