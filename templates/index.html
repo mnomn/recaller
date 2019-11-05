@@ -4,9 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="styles.css" media="screen" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Route2Cloud</title>
-</head>
+    <!-- development version, includes helpful console warnings -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+    <!-- production version, optimized for size and speed -->
+    <!-- script src="https://cdn.jsdelivr.net/npm/vue"></script -->
+  </head>
 <body>
 <div class="container">
   <div class="row">
@@ -16,48 +22,24 @@
       </div>
     </div> <!--col-->
   </div> <!--row-->
-  <div class="row">
-      <div class="col-md">
+
   <h3>Some routes</h3>
-  <div id=list></div>
-  <script>
-    fetch('./api')
-    .then(function(response) {
-      console.log("response " + response.status)
-      document.getElementById('list').innerHTML = "RRR!";
-      return response.json();
-    })
-    .then(function(myJson) {
-      console.log(JSON.stringify(myJson));
-      var ll = myJson.length;
-      var list = '<ul class="list-group">';
-      while ( ll-- ) {
-        var ob = myJson[ll]
-        list = list + "<li class='list-group-item'><div class='d-inline mr-2'><b>" + myJson[ll].Time + ":</b></div>";
-        list = list + "<div class='d-inline mr-2'>"+ myJson[ll].Input + "</div><div class=d-inline>";
-        if (myJson[ll].Output.length > 0) {
-          if (myJson[ll].OutProtocol.length  > 0) {
-            list = list + myJson[ll].OutProtocol + ":" + myJson[ll].Output;
-          } else {
-            list = myJson[ll].Output;
-          }
-        }
-        list = list + "</div></li>"
-      }
-      list = list + "</ol>";
+  <div id=routes>
+  <ul class="list-group list-group-horizontal">
+    <li v-for="obj in routeObjects" class="list-group-item list-group-item-primary">
+    <div v-on:click="clickRoute($event)">{{ obj.in }}</div>
+    </li>
+  </ul>
 
-      document.getElementById('list').innerHTML = list;
-
-    });
-
-
-    document.getElementById('list').innerHTML = "HEPxP!";
-    </script>
-    </div> <!--col--
-    <div class="col-md">
-      <div>Test col 2</div>
-    </div> --col-->
+  </div>
+  <div id="log"></div>
+</div> <!--col-->
   </div> <!--row-->
 <div class="container">
+<script type = "text/javascript" src = "api.js" ></script>
+<script>
+  get_log("log");
+  get_routes("EE");
+</script>
 </body>
 </html>

@@ -1,14 +1,8 @@
 package main
 
 /*
-Post:
-Inout format: post json
-Output format: Post same body as input
-
-Get:
-Web interface for monitoring the action.
-
-*/
+ * Route messages from HTTP POST to another PST URL or to MQTT.
+ */
 import (
 	"crypto/tls"
 	"crypto/x509"
@@ -348,17 +342,37 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 
 func handleWeb(w http.ResponseWriter, r *http.Request) {
 	htmltemp := filepath.Join(exedir, "templates", "index.html")
-	t, err := template.ParseFiles(htmltemp)
-	if err != nil {
-		fmt.Printf("Cannot find html template\n")
-		fmt.Fprintf(w, "Oh, no! Cannot show web page!\n")
-		return
-	}
+	//t, _ := template.ParseFiles(htmltemp)
+	t := template.Must(template.New("index.html").Delims("[[","]]").ParseFiles(htmltemp))
 	t.Execute(w, nil)
 }
 
-func handleApi(w http.ResponseWriter, r *http.Request) {
+/*
+ * api/log: Get a list of the latest routes made.
+ * Optional uery arguments (api/log?count=5&in=inId&out=outId)
+ * in: Show only log from a certain input
+ * out: Show only log from a certain output
+ * count: How many messages to get (max 20)
+ */
+func handleApiLog(w http.ResponseWriter, r *http.Request) {
+	keys, ok := r.URL.Query()["key"]
+	if ok {
+		fmt.Println("Got parameter " , keys, len(keys))
+	} else {
+		fmt.Println("No parameter")
+	}
 	js, _ := json.Marshal(webmess)
+	/* For debug logCall("inUrl", "somewhere/else", "ftp", "OK"); */
+	w.Write(js)
+}
+
+/*
+ * api/routes Get a list of all configured inputs
+ * Optional query args: (api/routes?in=inId&out=outId)
+ * in/out: Show only config for one input/output.
+ */
+func handleApiRoutes(w http.ResponseWriter, r *http.Request) {
+	js, _ := json.Marshal(routes)
 	/* For debug logCall("inUrl", "somewhere/else", "ftp", "OK"); */
 	w.Write(js)
 }
@@ -367,13 +381,17 @@ func main() {
 	// Get prog dir and thereby html template dir
 	exedir = filepath.Dir(os.Args[0])
 
+	fmt.Printf("Exec dir %v\n", exedir)
+
 	readConfig()
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleWeb).Methods("GET")
-	r.HandleFunc("/api", handleApi).Methods("GET")
+	r.HandleFunc("/api/routes", handleApiRoutes).Methods("GET")
+	r.HandleFunc("/api/log", handleApiLog).Methods("GET")
 	r.HandleFunc("/{urlin}", handleRoot).Methods("POST")
 	r.HandleFunc("/favicon.ico", handleNothing)
 	http.Handle("/", r)
+    r.PathPrefix("/").Handler(http.FileServer(http.Dir( exedir + "/templates/")))
 
 	if address == "" {
 		address = ":8222"
