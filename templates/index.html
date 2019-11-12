@@ -14,32 +14,43 @@
     <!-- script src="https://cdn.jsdelivr.net/npm/vue"></script -->
   </head>
 <body>
-<div class="container">
+  <div class="jumbotron ">
+    <div class="container">
+      <h1 class="display-3">Route2cloud web UI</h1>
+    </div>
+  </div>
+
+  <div class="container">
   <div class="row">
-    <div class="col-sm">
-      <div class="jumbotron">
-        <h1>Route2cloud web UI</h1>
+    <div class="col-md">
+      <div id=routes>
+        <ul class="list-group list-group-horizontal">
+        <li v-for="obj in routeObjects" class="list-group-item list-group-item-primary">
+        <div v-on:click="clickRoute($event)">{{ obj.in }}</div>
+        </li>
+        </ul>
       </div>
     </div> <!--col-->
   </div> <!--row-->
 
-  <h3>Some routes</h3>
-  <div id=routes>
-  <ul class="list-group list-group-horizontal">
-    <li v-for="obj in routeObjects" class="list-group-item list-group-item-primary">
-    <div v-on:click="clickRoute($event)">{{ obj.in }}</div>
-    </li>
-  </ul>
-
-  </div>
-  <div id="log"></div>
-</div> <!--col-->
+  <div class="row">
+    <div class="col-md">
+      <div id="log">
+      <ol class="list-group">
+        <li v-for="obj in logObjects" class="list-group-item">
+          <div class='d-inline mr-2'><b>{{obj.Time}} </b></div>
+          <div class='d-inline mr-2'>{{obj.Input}}</div>
+          <div class=d-inline>{{obj.OutProtocol}}{{obj.Output}}</div>
+        </li>
+      </ol>
+    </div>
+  </div> <!--col-->
   </div> <!--row-->
-<div class="container">
-<script type = "text/javascript" src = "api.js" ></script>
-<script>
-  get_log("log");
-  get_routes("EE");
-</script>
+  </div> <!--container-->
+  <script type = "text/javascript" src = "api.js" ></script>
+  <script>
+    get_log();
+    get_routes();
+  </script>
 </body>
 </html>

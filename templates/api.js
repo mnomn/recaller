@@ -1,71 +1,58 @@
 var routes = new Vue({
     el: '#routes',
     data: {
-      routeObjects: [
-        {in:"hej", out:"abc"},
-        {in:"hopp", out:"abc2"},
-        {in:"knasen3", out:"abc2"}
-      ]
+        routeObjects: [
+        ]
     },
     methods: {
         clickRoute: function(e){
             routeClicked(e)
         }
     }
-  })
+})
+
+var log = new Vue({
+    el: '#log',
+    data: {
+      logObjects: [
+      ]
+    }
+})
 
 function routeClicked(e) {
     console.log("Clicked " + e.currentTarget.innerText)
 }
 
-function get_routes(el) {
-    let routes_list="<h4>kalas</h4>";
-    //document.getElementById(el).innerHTML = routes_list;
+function get_routes() {
     fetch('./api/routes')
     .then(function(response) {
-      //document.getElementById(el).innerHTML = "No routes";
       return response.json();
     })
     .then(function(myJson) {
-      console.log("myJson")
       routes.routeObjects = [{in:"All"}]
-      var ll = myJson.length;
+      let ll = myJson.length;
       while ( ll-- ) {
         var ob = myJson[ll]
         routes.routeObjects.push(ob)
-        
       }
     });
 }
 
-function get_log(el) {
+function get_log() {
     fetch('./api/log')
     .then(function(response) {
-      document.getElementById(el).innerHTML = "RRR!";
-      console.log("response log A " , response.status);
-
       return response.json();
     })
     .then(function(myJson) {
-      var ll = myJson.length;
-      var list = '<ul class="list-group">';
+      // console.dir(myJson)
+      let ll = myJson.length;
       while ( ll-- ) {
-        var ob = myJson[ll]
-        list = list + "<li class='list-group-item'><div class='d-inline mr-2'><b>" + myJson[ll].Time + ":</b></div>";
-        list = list + "<div class='d-inline mr-2'>"+ myJson[ll].Input + "</div><div class=d-inline>";
-        if (myJson[ll].Output.length > 0) {
-          if (myJson[ll].OutProtocol.length  > 0) {
-            list = list + myJson[ll].OutProtocol + ":" + myJson[ll].Output;
-          } else {
-            list = myJson[ll].Output;
-          }
+        let ob = myJson[ll]
+        if (ob.OutProtocol && ob.OutProtocol.length  > 0) {
+            ob.OutProtocol += ":"
         }
-        list = list + "</div></li>"
+        log.logObjects.push(ob)
       }
-      list = list + "</ol>";
-
-      document.getElementById(el).innerHTML = list;
-
     });
 
 }
