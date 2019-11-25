@@ -10,7 +10,7 @@ import (
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gorilla/mux"
-	"html/template"
+	_ "html/template"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -46,7 +46,7 @@ func (t JsonTime)MarshalJSON() ([]byte, error) {
 	} else if now.Day() == t.Day() {
 		stamp = fmt.Sprintf("\"Today %s\"", t.Format("15:04"))
 	} else { // Generic time stamp
-		stamp = fmt.Sprintf("\"Today %s\"", t.Format("01-02 15:04"))
+		stamp = fmt.Sprintf("%s", t.Format("01-02 15:04"))
 	}
 	return []byte(stamp), nil
 }
@@ -60,6 +60,13 @@ type WebMess struct {
 
 var webmess = make([]WebMess, 3)
 
+type LatestPost struct {
+	Time time.Time
+	Body string
+}
+
+// For every "in", save time and body
+var latestPosts = make(map[string]LatestPost)
 
 func logCall(in string, out_log string, outProt string, res string) {
 	fmt.Printf("In:  %v Out: %v Res: %v\n", in, out_log, res)
@@ -74,6 +81,14 @@ func logCall(in string, out_log string, outProt string, res string) {
 		fmt.Printf("Webmess %v\n", a)
 	}
 	*/
+}
+
+// Remove leading "/"
+func normalizeIn(in *string) {
+	if (len(*in)>0 && (*in)[0] == '/') {
+		s2 := (*in)[1:]
+		*in=s2
+	}
 }
 
 func handleNothing(w http.ResponseWriter, r *http.Request) {
@@ -236,7 +251,7 @@ func getCertPool(pemPath string) (*x509.CertPool, error) {
 	return certs, nil
 }
 
-func routeTraffic(path string, jbody string) {
+func routeTraffic(path string, body string) {
 	//var val float32
 	var routed int
 	if globalDebug {
@@ -247,13 +262,26 @@ func routeTraffic(path string, jbody string) {
 		inurl, ok := tmp.(string)
 		_, debug := route["debug"] // Optional. Debug print
 
+		normalizeIn(&path)
+		normalizeIn(&inurl)
 		if ok && strings.Index(path, inurl) == 0 {
 
 			if globalDebug || debug {
 				fmt.Printf("Path %v configured\n", path)
 			}
 
-			newBody := TransformBody(jbody, route)
+			newBody := TransformBody(body, route)
+
+			// TODO: Merge webmess and latestPpost
+			latestPosts[inurl] = LatestPost{time.Now(), body}
+
+			tmp, ok = route["out"]
+			if !ok {
+				// If no out url: We are done.
+				return
+			}
+			outurl, _ := tmp.(string)
+			outlog, _ := tmp.(string)
 
 			tmp, exist := route["protocol"]
 			var prot string
@@ -267,9 +295,6 @@ func routeTraffic(path string, jbody string) {
 			}
 
 			// HTTP Post is default protocol
-			tmp = route["out"]
-			outurl, _ := tmp.(string)
-			outlog, _ := tmp.(string)
 			fmt.Printf("Route %v to %v using http POST %v\n", inurl, outurl[0:20], outlog)
 			req, err := http.NewRequest("POST", outurl, strings.NewReader(newBody))
 			hk, hk_exist := route["header_key"]
@@ -318,7 +343,7 @@ func routeTraffic(path string, jbody string) {
 	}
 }
 
-func handleRoot(w http.ResponseWriter, r *http.Request) {
+func handleRootPost(w http.ResponseWriter, r *http.Request) {
 	// Verify auth
 	if len(main_username) > 0 && len(main_password) > 0 {
 		u, p, ok := r.BasicAuth()
@@ -332,7 +357,6 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	urlarg := vars["urlin"]
-	fmt.Fprintf(w, "OK\n")
 	if r.Method == http.MethodPost {
 		go routeTraffic(r.URL.Path, string(body))
 	} else {
@@ -340,11 +364,18 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleWeb(w http.ResponseWriter, r *http.Request) {
-	htmltemp := filepath.Join(exedir, "templates", "index.html")
-	//t, _ := template.ParseFiles(htmltemp)
-	t := template.Must(template.New("index.html").Delims("[[","]]").ParseFiles(htmltemp))
-	t.Execute(w, nil)
+func handleRootGet(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	urlarg := vars["urlin"]
+	normalizeIn(&urlarg)
+
+	val, ok := latestPosts[urlarg]
+	if !ok {
+		w.Write([]byte("{}"))
+		return
+	}
+	js, _ := json.Marshal(val)
+	w.Write(js)
 }
 
 /*
@@ -373,6 +404,14 @@ func handleApiLog(w http.ResponseWriter, r *http.Request) {
  */
 func handleApiRoutes(w http.ResponseWriter, r *http.Request) {
 	js, _ := json.Marshal(routes)
+
+	/* For debug logCall("inUrl", "somewhere/else", "ftp", "OK"); */
+	w.Write(js)
+}
+
+func handleApiLatest(w http.ResponseWriter, r *http.Request) {
+	js, _ := json.Marshal(latestPosts)
+
 	/* For debug logCall("inUrl", "somewhere/else", "ftp", "OK"); */
 	w.Write(js)
 }
@@ -385,13 +424,14 @@ func main() {
 
 	readConfig()
 	r := mux.NewRouter()
-	r.HandleFunc("/", handleWeb).Methods("GET")
 	r.HandleFunc("/api/routes", handleApiRoutes).Methods("GET")
+	r.HandleFunc("/api/latest", handleApiLatest).Methods("GET")
 	r.HandleFunc("/api/log", handleApiLog).Methods("GET")
-	r.HandleFunc("/{urlin}", handleRoot).Methods("POST")
+	r.HandleFunc("/{[x|]urlin}", handleRootPost).Methods("POST")
+	r.HandleFunc("/x/{urlin}", handleRootGet).Methods("GET")
 	r.HandleFunc("/favicon.ico", handleNothing)
 	http.Handle("/", r)
-    r.PathPrefix("/").Handler(http.FileServer(http.Dir( exedir + "/templates/")))
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir( exedir + "/web/")))
 
 	if address == "" {
 		address = ":8222"

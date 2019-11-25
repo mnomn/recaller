@@ -32,12 +32,17 @@ install_rpi: build_rpi generate_systemd
 	ssh $(REMOTE_USER)@$(REMOTE_HOST) "mkdir -p bin/templates"
 
 	scp $(prog) $(REMOTE_USER)@$(REMOTE_HOST):bin/$(prog)
-	scp -r templates/* $(REMOTE_USER)@$(REMOTE_HOST):bin/templates/
+	ssh $(REMOTE_USER)@$(REMOTE_HOST) "mkdir -p bin/web"
+	scp -r web/* $(REMOTE_USER)@$(REMOTE_HOST):bin/web/
 	scp route2cloud@pi.service $(REMOTE_USER)@$(REMOTE_HOST):
 	ssh $(REMOTE_USER)@$(REMOTE_HOST) "sudo cp route2cloud@pi.service /etc/systemd/system/"
+
+	ssh $(REMOTE_USER)@$(REMOTE_HOST) "sudo systemctl daemon-reload && sudo systemctl start route2cloud@$(REMOTE_USER).service"
+
 
 #	go install route2cloud
 
 test:
 	go test
+
 

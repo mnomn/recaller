@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="styles.css" media="screen" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Route2Cloud</title>
+    <!-- development version, includes helpful console warnings -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+    <!-- production version, optimized for size and speed -->
+    <!-- script src="https://cdn.jsdelivr.net/npm/vue"></script -->
+  </head>
+<body>
+<h1>Stuff</h1>
+
+<div class="container-fluid">
+  <div class="row" id="routes">
+    <div class="col-md flex-container">
+      <div v-for="obj in routeObjects">
+      <div v-on:click="clickRoute($event)">{{ obj.in }}</div>
+      </div>
+    </div>
+  </div> <!--row-->
+
+  <div class="row">
+    <div class="col-md">
+      <a class="navlink" href="config.html">config</a>
+    </div> <!--row-->
+  </div> <!--container-->
+  <script type = "text/javascript" src = "api.js" ></script>
+  <script>
+    get_routes();
+  </script>
+</body>
+</html>
