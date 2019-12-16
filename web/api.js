@@ -1,12 +1,19 @@
 var routes = new Vue({
     el: '#routes',
     data: {
-        routeObjects: [
-        ]
+      showCfg:false,
+      thisIn:"hhhh",
+      routeObjects: []
     },
     methods: {
         clickRoute: function(e){
-            routeClicked(e)
+          console.log("SHOW! ")
+          this.showCfg=true
+          this.thisIn="serfd"
+          routeClicked(e)
+        },
+        cancelConf: function(e){
+          this.showCfg=false
         }
     }
 })
@@ -20,10 +27,20 @@ var log = new Vue({
 })
 
 function routeClicked(e) {
-    console.log("Clicked " + e.currentTarget.innerText)
+  this.thisIn="Abba"
+  showCfgZ=true
+  route64=btoa(e.currentTarget.innerText)
+  console.log("Get RouteDef for " + e.currentTarget.innerText + " route64:" + route64)
+    // for (let ix in routes.routeObjects) {
+    //   let ro = routes.routeObjects[ix]
+    //   console.log("RO: " , ro.in , ro.out)
+    //   console.dir(ro)
+
+    // }
+
 }
 
-function get_routes() {
+function get_routeDefs() {
     fetch('./api/routes')
     .then(function(response) {
       return response.json();

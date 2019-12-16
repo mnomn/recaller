@@ -29,6 +29,17 @@
         <div v-on:click="clickRoute($event)">{{ obj.in }}</div>
         </li>
         </ul>
+          <form v-if="showCfg">
+            <div class="form-group">
+              <label for="cfgIn">IN</label>
+              <input type="text" class="form-control" id="cfgIn" placeholder="/InPath">
+              <label for="cfgOut">OUT</label>
+              <input type="text" class="form-control" id="cfgOut" placeholder="http://out.url/path">
+            </div>
+            <button v-on:click="cancelConf" type="button" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </form>
+
       </div>
     </div> <!--col-->
   </div> <!--row-->
@@ -54,7 +65,7 @@
   <script type = "text/javascript" src = "api.js" ></script>
   <script>
     get_log();
-    get_routes();
+    get_routeDefs();
   </script>
 </body>
 </html>
