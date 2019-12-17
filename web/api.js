@@ -7,10 +7,11 @@ var routes = new Vue({
     },
     methods: {
         clickRoute: function(e){
-          console.log("SHOW! ")
-          this.showCfg=true
-          this.thisIn="serfd"
+          console.log("Click rout")
           routeClicked(e)
+        },
+        clickRouteCfg: function(e){
+          this.showCfg=!this.showCfg
         },
         cancelConf: function(e){
           this.showCfg=false
@@ -28,7 +29,7 @@ var log = new Vue({
 
 function routeClicked(e) {
   this.thisIn="Abba"
-  showCfgZ=true
+
   route64=btoa(e.currentTarget.innerText)
   console.log("Get RouteDef for " + e.currentTarget.innerText + " route64:" + route64)
     // for (let ix in routes.routeObjects) {

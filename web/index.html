@@ -14,25 +14,60 @@
     <!-- script src="https://cdn.jsdelivr.net/npm/vue"></script -->
   </head>
 <body>
-<h1>Stuff</h1>
-
-<div class="container-fluid">
-  <div class="row" id="routes">
-    <div class="col-md flex-container">
-      <div v-for="obj in routeObjects">
-      <div v-on:click="clickRoute($event)">{{ obj.in }}</div>
-      </div>
+  <div class="jumbotron pb-4 pt-4">
+    <div class="container">
+      <h1 class="display-3 ">Route2Cloud</h1>
     </div>
+  </div>
+
+  <div class="container">
+  <div class="row">
+    <div class="col-md">
+      <div id=routes>
+        <div class="d-flex flex-row flex-wrap bd-highlight mb-3">
+          <div v-for="obj in routeObjects">
+            <div class="btn-group mr-1 mt-1" role="group" aria-label="Basic example">
+              <button v-on:click="clickRoute($event)" type="button" class="btn btn-info">{{ obj.in }}</button>
+              <button v-on:click="clickRouteCfg($event)" type="button" class="btn btn-info">
+                <small>&#x270e;</small>
+              </button>
+          </div>
+            </div>
+        </div>
+
+          <form v-if="showCfg">
+            <div class="form-group">
+              <label for="cfgIn">IN</label>
+              <input type="text" class="form-control" id="cfgIn" placeholder="/InPath">
+              <label for="cfgOut">OUT</label>
+              <input type="text" class="form-control" id="cfgOut" placeholder="http://out.url/path">
+            </div>
+            <button v-on:click="cancelConf" type="button" class="btn btn-secondary">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </form>
+
+      </div>
+    </div> <!--col-->
   </div> <!--row-->
 
   <div class="row">
     <div class="col-md">
-      <a class="navlink" href="config.html">config</a>
-    </div> <!--row-->
+      <div id="log">
+      <ol class="list-group">
+        <li v-for="obj in logObjects" class="list-group-item">
+          <div class='d-inline mr-2'><b>{{obj.Time}} </b></div>
+          <div class='d-inline mr-2'>{{obj.Input}}</div>
+          <div class=d-inline>{{obj.OutProtocol}}{{obj.Output}}</div>
+        </li>
+      </ol>
+    </div>
+  </div> <!--col-->
+  </div> <!--row-->
   </div> <!--container-->
   <script type = "text/javascript" src = "api.js" ></script>
   <script>
-    get_routes();
+    get_log();
+    get_routeDefs();
   </script>
 </body>
 </html>
