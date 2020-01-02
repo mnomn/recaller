@@ -27,7 +27,7 @@
         <div class="d-flex flex-row flex-wrap bd-highlight mb-3">
           <div v-for="obj in routeObjects">
             <div class="btn-group mr-1 mt-1" role="group" aria-label="Basic example">
-              <button v-on:click="clickRoute($event)" type="button" class="btn btn-info">{{ obj.in }}</button>
+              <button v-on:click="clickRoute($event, obj.in)" type="button" class="btn btn-info">{{ obj.in }}</button>
               <button v-on:click="clickRouteCfg($event)" type="button" class="btn btn-info">
                 <small>&#x270e;</small>
               </button>

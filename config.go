@@ -18,14 +18,6 @@ type conf struct {
 	MainPass string `json:"Main_password"`
 }
 
-func genMainConfig() {
-	fmt.Println("Gen Main config")
-	cfg := &conf{MainUser:"user_name",MainPass:"secret"}
-	cfg.Doc="Mandatory parameters capitalized, optional in lower case (can be removed) "
-  cfgStr, _ := json.Marshal(cfg)
-	fmt.Println("Conf: ", string(cfgStr))
-}
-
 func readConfigFiles(confFlag *string) (err error) {
 	err = nil
 	if len(*confFlag) < 1 {
@@ -77,7 +69,12 @@ func readConfigFiles(confFlag *string) (err error) {
 		if exist {
 			r := tmp.([]interface{})
 			for _, v := range r {
-				routes = append(routes, v.(map[string]interface{}))
+				// var route map[string]interface{}
+				route := v.(map[string]interface{})
+				route["file"] = name
+				fmt.Printf("CONF: %+v\n" , route)
+				routes = append(routes, route)
+				// routes = append(routes, v.(map[string]interface{}))
 			}
 		}
 	}
@@ -88,13 +85,8 @@ func readConfig() {
 	// TODO: Support folder with many json files in.
 	// Read input parameters
 	confFlag := flag.String("conf", "", "Configuration directory, containing *.conf files. Default: ~/.route2cloud")
-	genMain := flag.Bool("gen-main-config", false, "Generate mqtt-config")
 	flag.Parse()
-	fmt.Println("Generate main config", *genMain);
-	if *genMain {
-		genMainConfig()
-		os.Exit(0);
-	}
+	fmt.Println("Generate main config");
 
 	readConfigFiles(confFlag)
 }

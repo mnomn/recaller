@@ -6,9 +6,9 @@ var routes = new Vue({
       routeObjects: []
     },
     methods: {
-        clickRoute: function(e){
-          console.log("Click rout")
-          routeClicked(e)
+        clickRoute: function(e, inp){
+          console.log("Click route!", inp)
+          routeClicked(e, inp)
         },
         clickRouteCfg: function(e){
           this.showCfg=!this.showCfg
@@ -27,11 +27,12 @@ var log = new Vue({
     }
 })
 
-function routeClicked(e) {
-  this.thisIn="Abba"
+function routeClicked(e, inp) {
+  this.thisIn=inp
 
-  route64=btoa(e.currentTarget.innerText)
-  console.log("Get RouteDef for " + e.currentTarget.innerText + " route64:" + route64)
+  // route64=btoa(e.currentTarget.innerText)
+  console.log("Get RouteDef for " + inp)
+  get_log(inp)
     // for (let ix in routes.routeObjects) {
     //   let ro = routes.routeObjects[ix]
     //   console.log("RO: " , ro.in , ro.out)
@@ -56,21 +57,21 @@ function get_routeDefs() {
     });
 }
 
-function get_log() {
-    fetch('./api/log')
-    .then(function(response) {
-      return response.json();
-    })
-    .then(function(myJson) {
-      // console.dir(myJson)
-      let ll = myJson.length;
-      while ( ll-- ) {
-        let ob = myJson[ll]
-        if (ob.OutProtocol && ob.OutProtocol.length  > 0) {
-            ob.OutProtocol += ":"
-        }
-        log.logObjects.push(ob)
+function get_log(routeDef) {
+  fetch('./api/log?in='+routeDef)
+  .then(function(response) {
+    return response.json();
+  })
+  .then(function(myJson) {
+    log.logObjects = []
+    let ll = myJson.length;
+    while ( ll-- ) {
+      let ob = myJson[ll]
+      if (ob.OutProtocol && ob.OutProtocol.length  > 0) {
+          ob.OutProtocol += ":"
       }
-    });
+      log.logObjects.push(ob)
+    }
+  });
 
 }

@@ -51,36 +51,41 @@ func (t JsonTime)MarshalJSON() ([]byte, error) {
 	return []byte(stamp), nil
 }
 
-type WebMess struct {
+// // For every "in", save time and body
+// var latestPosts = make(map[string]LatestPost)
+
+type OldPost struct {
 	Time JsonTime
 	Input string
 	Output string
 	OutProtocol string
 }
 
-var webmess = make([]WebMess, 3)
-
-type LatestPost struct {
-	Time time.Time
-	Body string
+type OldPosts struct {
+	posts []OldPost
 }
+// type oldPosts []OldPost
 
-// For every "in", save time and body
-var latestPosts = make(map[string]LatestPost)
+var oldPostsLists = make(map[string]*OldPosts)
 
 func logCall(in string, out_log string, outProt string, res string) {
 	fmt.Printf("In:  %v Out: %v Res: %v\n", in, out_log, res)
 	// Attach to weebmess.
-	wm := WebMess{JsonTime{time.Now()}, in , out_log, outProt}
-	webmess = append( webmess, wm)
-	if len(webmess) > 20 {
-		webmess = webmess[1:]
+
+	ll, ok := oldPostsLists[in]
+	if !ok || ll == nil {
+		ll = &OldPosts{}
+		ll.posts=make([]OldPost,0)
+		// newL := make([]OldPost, 0)
+		oldPostsLists[in] = ll
 	}
-	/*
-	for _,a := range webmess {
-		fmt.Printf("Webmess %v\n", a)
+	op := OldPost{JsonTime{time.Now()}, in, out_log, outProt}
+	ll.posts = append(ll.posts, op)
+
+	if len(ll.posts) > 20 {
+		ll.posts = ll.posts[1:]
 	}
-	*/
+
 }
 
 // Remove leading "/"
@@ -137,11 +142,11 @@ func pubMqtt(postString string, url_config map[string]interface{}, debug bool) {
 	if temp != nil {
 		root_ca_file = temp.(string)
 		if globalDebug || debug {
-			fmt.Printf("Using root CA")
+			fmt.Println("Using root CA")
 		}
 		_, err := os.Stat(root_ca_file)
 		if err != nil {
-			fmt.Printf("root_ca err%v\n", err)
+			fmt.Println("root_ca err%v\n", err)
 		}
 		return
 	}
@@ -272,9 +277,8 @@ func routeTraffic(path string, body string) {
 
 			newBody := TransformBody(body, route)
 
-			// TODO: Merge webmess and latestPpost
-			latestPosts[inurl] = LatestPost{time.Now(), body}
-
+			opList, ok := oldPostsLists[inurl]
+			fmt.Printf("OLD: %v, %v \n", opList, ok)
 			tmp, ok = route["out"]
 			if !ok {
 				// If no out url: We are done.
@@ -364,20 +368,6 @@ func handleRootPost(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleRootGet(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	urlarg := vars["urlin"]
-	normalizeIn(&urlarg)
-
-	val, ok := latestPosts[urlarg]
-	if !ok {
-		w.Write([]byte("{}"))
-		return
-	}
-	js, _ := json.Marshal(val)
-	w.Write(js)
-}
-
 /*
  * api/log: Get a list of the latest routes made.
  * Optional uery arguments (api/log?count=5&in=inId&out=outId)
@@ -386,15 +376,23 @@ func handleRootGet(w http.ResponseWriter, r *http.Request) {
  * count: How many messages to get (max 20)
  */
 func handleApiLog(w http.ResponseWriter, r *http.Request) {
-	keys, ok := r.URL.Query()["key"]
-	if ok {
-		fmt.Println("Got parameter " , keys, len(keys))
+	keys, ok := r.URL.Query()["in"]
+	if ok && len(keys) > 0 {
+		fmt.Println("Got parameter " , keys[0])
+		inp := keys[0]
+		logs, ok := oldPostsLists[inp]
+		if !ok {
+			w.Write([]byte("[]"))
+			return
+		}
+		js, _ := json.Marshal(logs.posts)
+		w.Write(js)
+		return
 	} else {
-		fmt.Println("No parameter")
+		fmt.Println("No 'in' parameter")
 	}
-	js, _ := json.Marshal(webmess)
-	/* For debug logCall("inUrl", "somewhere/else", "ftp", "OK"); */
-	w.Write(js)
+
+	w.Write([]byte("[]"))
 }
 
 /*
@@ -409,13 +407,6 @@ func handleApiRoutes(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-func handleApiLatest(w http.ResponseWriter, r *http.Request) {
-	js, _ := json.Marshal(latestPosts)
-
-	/* For debug logCall("inUrl", "somewhere/else", "ftp", "OK"); */
-	w.Write(js)
-}
-
 func main() {
 	// Get prog dir and thereby html template dir
 	exedir = filepath.Dir(os.Args[0])
@@ -425,10 +416,8 @@ func main() {
 	readConfig()
 	r := mux.NewRouter()
 	r.HandleFunc("/api/routes", handleApiRoutes).Methods("GET")
-	r.HandleFunc("/api/latest", handleApiLatest).Methods("GET")
 	r.HandleFunc("/api/log", handleApiLog).Methods("GET")
 	r.HandleFunc("/{[x|]urlin}", handleRootPost).Methods("POST")
-	r.HandleFunc("/x/{urlin}", handleRootGet).Methods("GET")
 	r.HandleFunc("/favicon.ico", handleNothing)
 	http.Handle("/", r)
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir( exedir + "/web/")))
@@ -440,7 +429,10 @@ func main() {
 	fmt.Printf("Serve address %v\n", address)
 
 	// Add some weblogging for test
-	logCall("Start system", "route2cloud", "-", "OK")
+	logCall("Start system", "route2cloud", "SYS", "OK")
+	logCall("/testA", "SOME.URL", "POST", "OK")
+	logCall("/testA", "SOME.URL", "POST", "OK")
+	logCall("/testA", "SOME.URL", "POST", "OK")
 
 	e := http.ListenAndServe(address, r) // Blocking function
 	if (e != nil) {
