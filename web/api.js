@@ -2,15 +2,16 @@ var routes = new Vue({
     el: '#routes',
     data: {
       showCfg:false,
-      thisIn:"hhhh",
+      lastClick:0,
       routeObjects: []
     },
     methods: {
         clickRoute: function(e, inp){
-          console.log("Click route!", inp)
+          setFocus(e.explicitOriginalTarget);
           routeClicked(e, inp)
         },
         clickRouteCfg: function(e){
+          setFocus(e.explicitOriginalTarget);
           this.showCfg=!this.showCfg
         },
         cancelConf: function(e){
@@ -27,19 +28,24 @@ var log = new Vue({
     }
 })
 
-function routeClicked(e, inp) {
-  this.thisIn=inp
+function setFocus(el) {
+  if(this.lastClick) {
+    this.lastClick.classList.add("btn-info")
+    this.lastClick.classList.remove("btn-warning")
+  }
+  let e = el;
+  if (el.tagName.toUpperCase() != "BUTTON") {
+    // Clicked image inside button.
+    e = el.parentElement
+  }
+  this.lastClick = e
+  e.classList.remove("btn-info")
+  e.classList.add("btn-warning")
+}
 
-  // route64=btoa(e.currentTarget.innerText)
+function routeClicked(e, inp) {
   console.log("Get RouteDef for " + inp)
   get_log(inp)
-    // for (let ix in routes.routeObjects) {
-    //   let ro = routes.routeObjects[ix]
-    //   console.log("RO: " , ro.in , ro.out)
-    //   console.dir(ro)
-
-    // }
-
 }
 
 function get_routeDefs() {
@@ -48,7 +54,7 @@ function get_routeDefs() {
       return response.json();
     })
     .then(function(myJson) {
-      routes.routeObjects = [{in:"All"}]
+      routes.routeObjects = [{in:""}]
       let ll = myJson.length;
       while ( ll-- ) {
         var ob = myJson[ll]
@@ -58,7 +64,11 @@ function get_routeDefs() {
 }
 
 function get_log(routeDef) {
-  fetch('./api/log?in='+routeDef)
+  let path = '/api/log'
+  if (routeDef) {
+    path += '?in='+routeDef
+  }
+  fetch(path)
   .then(function(response) {
     return response.json();
   })

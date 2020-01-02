@@ -389,10 +389,13 @@ func handleApiLog(w http.ResponseWriter, r *http.Request) {
 		w.Write(js)
 		return
 	} else {
-		fmt.Println("No 'in' parameter")
+		allPosts := []OldPost{}
+		for _, v := range oldPostsLists {
+			allPosts = append(allPosts, v.posts ...)
+		}
+		js, _ := json.Marshal(allPosts)
+		w.Write(js)
 	}
-
-	w.Write([]byte("[]"))
 }
 
 /*
