@@ -12,8 +12,8 @@ func TestTransIFTTT2AIO(t *testing.T) {
 	// Also: Convert value 2 to {value2:321}. That way one post to route2cloud
 	// can result in two posts to "cloud".
 
-	var route map[string]interface{}
-	route_string := `{"in":"regextest","regexp_find":"value1", "regexp_replace":"value"}`
+	var route Route
+	route_string := `{"in":"regextest","regexpFind":"value1", "regexpReplace":"value"}`
 	if err := json.Unmarshal([]byte(route_string), &route); err != nil {
 		t.Errorf("Bad input! %v", err)
 	}
@@ -23,7 +23,7 @@ func TestTransIFTTT2AIO(t *testing.T) {
 		t.Errorf("Transformation 1 failed %v\n", res)
 	}
 
-	route_string = `{"in":"regextest","regexp_find":"value2", "regexp_replace":"value"}`
+	route_string = `{"in":"regextest","regexpFind":"value2", "regexpReplace":"value"}`
 	if err := json.Unmarshal([]byte(route_string), &route); err != nil {
 		t.Errorf("Bad input! %v", err)
 	}
@@ -36,9 +36,9 @@ func TestTransIFTTT2AIO(t *testing.T) {
 // func TestTransformBody(postString string, url_config map[string]interface{}) {
 
 func TestTransformBody(t *testing.T) {
-	var route map[string]interface{}
+	var route Route
 	body := `{"value1":123, "value2":321, "value3":987}`
-	raw := `{"in":"regextest","regexp_find":"value1", "regexp_replace":"banan"}`
+	raw := `{"in":"regextest","regexpFind":"value1", "regexpReplace":"banan"}`
 	if err := json.Unmarshal([]byte(raw), &route); err != nil {
 		t.Errorf("Bad input! %v", err)
 	}

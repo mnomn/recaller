@@ -12,11 +12,33 @@ import (
 
 const defaultDir = ".route2cloud"
 
-type conf struct {
-	Doc string `json: doc`
-	MainUser string `json:"Main_user"`
-	MainPass string `json:"Main_password"`
+type RootConfig struct {
+	Address  string  `json: "address"`
+	Username string  `json: "username"`
+	Password string  `json: "password"`
+	Debug    int     `json: "debug"`
+	Routes   []Route `json: "routes"`
 }
+
+type Route struct {
+	FileName       string `json: "-"`
+	In             string `json: "in"`
+	Out            string `json: "out"`
+	Topic          string `json: "topic"`
+	Username       string `json: "username"`
+	Password       string `json: "password"`
+	HeaderKey      string `json: "headerKey"` // TODO: Combine to header key and value
+	HeaderValue    string `json: "headerValue"`
+	RegexpFind     string `json: "regexpFind"`
+	RegexpReplace  string `json: "regexpReplace"`
+	PrivateKeyFile string `json: "privateKeyFile"`
+	CertFile       string `json: "certFile"`
+	RoootCaFile    string `json: "rootCaFile"`
+	Debug          int    `json: "debug"`
+}
+
+// Read one or many config fies and store here
+var Config RootConfig
 
 func readConfigFiles(confFlag *string) (err error) {
 	err = nil
@@ -29,64 +51,71 @@ func readConfigFiles(confFlag *string) (err error) {
 	files, err := ioutil.ReadDir(*confFlag)
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1);
+		os.Exit(1)
 	}
 
 	for _, file := range files {
-		name := file.Name()
-		if !strings.HasSuffix(name, ".conf") {
+		nameName := file.Name()
+		if !strings.HasSuffix(nameName, ".conf") {
 			continue
 		}
-		fmt.Println("Read config " + name)
+		fmt.Println("Read config " + nameName)
 
-		var config map[string]interface{}
+		var config RootConfig
 
-		//		fmt.Println("FILE: " +  file.Name())
-		raw, err := ioutil.ReadFile(*confFlag + "/" + name)
+		raw, err := ioutil.ReadFile(*confFlag + "/" + nameName)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
 		if err := json.Unmarshal(raw, &config); err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		tmp, exist := config["address"]
-		if exist {
-			address = tmp.(string)
-		}
-		tmp, exist = config["main_username"]
-		if exist {
-			main_username = tmp.(string)
-		}
-		tmp, exist = config["main_password"]
-		if exist {
-			main_password = tmp.(string)
-		}
-		_, globalDebug = config["debug"] // Optional. Debug print
 
-		tmp, exist = config["routes"]
-		if exist {
-			r := tmp.([]interface{})
-			for _, v := range r {
-				// var route map[string]interface{}
-				route := v.(map[string]interface{})
-				route["file"] = name
-				fmt.Printf("CONF: %+v\n" , route)
-				routes = append(routes, route)
-				// routes = append(routes, v.(map[string]interface{}))
-			}
+		readGlobalValues(config)
+
+		if config.Routes == nil {
+			continue
+		}
+
+		for _, route := range config.Routes {
+			route.FileName = nameName
+			Config.Routes = append(Config.Routes, route)
 		}
 	}
+
+	if Config.Debug > 0 {
+		fmt.Println("Routes:")
+		for _, r := range Config.Routes {
+			fmt.Printf("  %v -> %v\n", r.In, r.Out)
+		}
+	}
+
 	return //err
 }
 
+func readGlobalValues(configFromFile RootConfig) {
+	// Only overwrite if values are set
+	if configFromFile.Address != "" {
+		Config.Address = configFromFile.Address
+	}
+	if configFromFile.Username != "" {
+		Config.Username = configFromFile.Username
+	}
+	if configFromFile.Password != "" {
+		Config.Password = configFromFile.Password
+	}
+	if configFromFile.Debug > Config.Debug {
+		Config.Debug = configFromFile.Debug
+	}
+}
+
 func readConfig() {
-	// TODO: Support folder with many json files in.
-	// Read input parameters
 	confFlag := flag.String("conf", "", "Configuration directory, containing *.conf files. Default: ~/.route2cloud")
 	flag.Parse()
-	fmt.Println("Generate main config");
+	fmt.Println("Generate main config")
 
 	readConfigFiles(confFlag)
 }

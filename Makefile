@@ -27,7 +27,6 @@ generate_systemd:
 
 install_rpi: build_rpi generate_systemd
 	$(info "REMOTE_HOST: $(REMOTE_HOST)" )
-	$(info REMOTE_USER: $(REMOTE_USER) )
 	ssh $(REMOTE_USER)@$(REMOTE_HOST) "sudo systemctl stop route2cloud@$(REMOTE_USER).service"
 	ssh $(REMOTE_USER)@$(REMOTE_HOST) "mkdir -p bin/templates"
 
