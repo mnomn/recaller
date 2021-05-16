@@ -6,11 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"strings"
 )
-
-const defaultDir = ".route2cloud"
 
 type RootConfig struct {
 	Address  string  `json: "address"`
@@ -43,10 +40,9 @@ var Config RootConfig
 func readConfigFiles(confFlag *string) (err error) {
 	err = nil
 	if len(*confFlag) < 1 {
-		u, _ := user.Current()
-		*confFlag = u.HomeDir + "/" + defaultDir
+		*confFlag, _ = os.Getwd()
 	}
-	fmt.Println("Read config files in " + *confFlag + "/")
+	fmt.Println("Reading configuration files in " + *confFlag)
 
 	files, err := ioutil.ReadDir(*confFlag)
 	if err != nil {
@@ -113,9 +109,7 @@ func readGlobalValues(configFromFile RootConfig) {
 }
 
 func readConfig() {
-	confFlag := flag.String("conf", "", "Configuration directory, containing *.conf files. Default: ~/.route2cloud")
+	confFlag := flag.String("c", "", "Configuration directory, containing *.conf files. Default: Current directory.")
 	flag.Parse()
-	fmt.Println("Generate main config")
-
 	readConfigFiles(confFlag)
 }

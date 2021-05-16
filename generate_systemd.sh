@@ -16,8 +16,7 @@ Description=route2cloud
 After=network.target
 
 [Service]
-User=%i
-ExecStart=/home/$UU/bin/route2cloud
+ExecStart=/usr/local/bin/route2cloud
 
 [Install]
 WantedBy=multi-user.target

@@ -19,10 +19,9 @@ func check(err error) {
 }
 
 func routeTraffic(path string, body string) {
-
 	var routed int
 	if Config.Debug > 0 {
-		fmt.Printf("Incomming path: %v\n", path)
+		fmt.Printf("Incoming path: %v\n", path)
 	}
 	for _, route := range Config.Routes {
 		normalizeIn(&path)
