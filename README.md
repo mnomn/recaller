@@ -1,6 +1,6 @@
 # Route2cloud
 
-A service that listens for http post and sends them on to another url/protocol. It is designed for small devices (IoT) that cannot handle some protocols/schemas or some types of security. It is possible to get incomming HTTP and send it on as HTTPS with certificates or user:passwords, or to an mqtt topic.
+A service that listens for http POST or PUT and re-sends mesasges to another url. The resend can append security and use a different schema: http, https or mqtt. It is also possible to add username and password, http headers or certificates. It is designed for small devices (IoT) that cannot handle some protocols/schemas or some types of security.
 
 ## Build
 First do `go mod init github.com/mnomn/route2cloud`, 

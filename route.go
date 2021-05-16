@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
@@ -35,17 +34,14 @@ func routeTraffic(path string, body string) {
 				continue
 			}
 
-			if Config.Debug > 0 || route.Debug > 0 {
+			if Config.Debug > 1 || route.Debug > 1 {
 				fmt.Printf("Path %v configured\n", path)
 			}
 
 			newBody := TransformBody(body, route)
 
-			opList, ok := oldPostsLists[route.In]
-			fmt.Printf("OLD: %v, %v \n", opList, ok)
-
 			if strings.HasPrefix(route.Out, "mqtt") {
-				pubMqtt(string(newBody), route)
+				sendMqtt(string(newBody), route)
 				routed += 1
 				return
 			}
@@ -98,12 +94,11 @@ func sendHttp(postString string, route Route) {
 
 }
 
-func pubMqtt(postString string, route Route) {
-
+func sendMqtt(postString string, route Route) {
 	outUrl, _ := url.Parse(route.Out)
 	out := route.Out
 	if outUrl.Scheme == "mqtt" {
-		// TODO: Handle ports.
+		// TODO: Set port if not set in url
 		out = strings.Replace(out, "mqtt", "tcp", 1)
 	}
 
@@ -121,7 +116,6 @@ func pubMqtt(postString string, route Route) {
 		opts.SetPassword(route.Password)
 	}
 
-	logCall(route.In, topic, "")
 	fmt.Printf("Route to mqtt broker %v, topic %v\n", out, topic)
 
 	cid := "ClientID"
@@ -131,33 +125,34 @@ func pubMqtt(postString string, route Route) {
 			fmt.Printf("Mqtt cert files%v\n%v\n%v\n", route.RoootCaFile, route.CertFile, route.PrivateKeyFile)
 		}
 		tlsConf, err := makeTlsConfig(route.RoootCaFile, route.CertFile, route.PrivateKeyFile)
-		fmt.Printf("TLS CFG ERR: %v\n", err)
+		if err != nil {
+			fmt.Printf("TLS Config  error: %v\n", err)
+			return
+		}
 		opts.SetTLSConfig(tlsConf)
 		opts.SetCleanSession(true)
 	}
 
-	fmt.Println("pubMqtt New client")
-
+	result := "OK"
 	c := MQTT.NewClient(opts)
-	fmt.Println("pubMqtt New client DUN")
 
 	if Config.Debug > 2 || route.Debug > 2 {
 		fmt.Printf("Mqtt data: %v\n", postString)
 	}
 
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		fmt.Printf("pubMqtt connect ERROR. %v\n", token.Error())
-		os.Exit(1)
+		result = fmt.Sprintf("MQTT connection ERROR. %v\n", token.Error())
+		fmt.Printf(result)
+		return
 	} else {
-		fmt.Println("pubMqtt New client PUB")
 		token = c.Publish(topic, 0, false, postString)
-		fmt.Println("pubMqtt New client WW")
 		token.Wait()
-		fmt.Println("pubMqtt New client Waited")
 		if token.Error() != nil {
-			fmt.Printf("posted token err: %v\n", token.Error())
+			result = fmt.Sprintf("posted token err: %v\n", token.Error())
+			fmt.Printf(result)
 		}
 	}
+	logCall(route.In, topic, result)
 	c.Disconnect(250)
 }
 

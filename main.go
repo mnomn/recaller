@@ -46,13 +46,7 @@ func handleRootPost(w http.ResponseWriter, r *http.Request) {
 	// Get the body
 	body, _ := ioutil.ReadAll(r.Body)
 
-	vars := mux.Vars(r)
-	urlarg := vars["urlin"]
-	if r.Method == http.MethodPost {
-		go routeTraffic(r.URL.Path, string(body))
-	} else {
-		fmt.Printf("Only post supported. %v\n", urlarg /*r.URL.Path*/)
-	}
+	go routeTraffic(r.URL.Path, string(body))
 }
 
 /*
