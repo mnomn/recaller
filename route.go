@@ -94,14 +94,16 @@ func sendHttp(postString string, route Route) {
 }
 
 func sendMqtt(postString string, route Route) {
-	outUrl, _ := url.Parse(route.Out)
-	out := route.Out
-	if outUrl.Scheme == "mqtt" {
-		// TODO: Set port if not set in url
-		out = strings.Replace(out, "mqtt", "tcp", 1)
+	serverString, err := convertToMqttServerString(route.Out)
+
+	if err != nil {
+		fmt.Printf("Invalid out url: %v", serverString)
+		return
 	}
 
-	opts := MQTT.NewClientOptions().AddBroker(out)
+	fmt.Printf("Broker: %v\n", serverString)
+
+	opts := MQTT.NewClientOptions().AddBroker(serverString)
 
 	// Default: same topic as input path
 	topic := route.In
@@ -115,7 +117,7 @@ func sendMqtt(postString string, route Route) {
 		opts.SetPassword(route.Password)
 	}
 
-	fmt.Printf("Route to mqtt broker %v, topic %v\n", out, topic)
+	fmt.Printf("Route to mqtt broker %v, topic %v\n", serverString, topic)
 
 	cid := "ClientID"
 	opts.SetClientID(cid)
@@ -201,4 +203,37 @@ func getCertPool(pemPath string) (*x509.CertPool, error) {
 	}
 	certs.AppendCertsFromPEM(pemData)
 	return certs, nil
+}
+
+func convertToMqttServerString(configuredOut string) (string, error) {
+	parsedUrl, err := url.Parse(configuredOut)
+
+	if err != nil {
+		return "", err
+	}
+
+	if parsedUrl.Scheme == "" || parsedUrl.Host == "" {
+		return "", fmt.Errorf("Invalid Out url: %v\n", configuredOut)
+	}
+
+	// paho does not understand mqtt or mqtts schema
+	// convert "mqtt://hostname" to tcp://hostname:1883
+	if strings.EqualFold(parsedUrl.Scheme, "mqtt") {
+		port := ""
+		if strings.Index(parsedUrl.Host, ":") < 0 {
+			port = ":1883"
+		}
+		return fmt.Sprintf("tcp://%v%v", parsedUrl.Host, port), nil
+	}
+
+	if strings.EqualFold(parsedUrl.Scheme, "mqtts") {
+		port := ""
+		if strings.Index(parsedUrl.Host, ":") < 0 {
+			port = ":8883"
+		}
+		return fmt.Sprintf("tcp://%v%v", parsedUrl.Host, port), nil
+	}
+
+	return configuredOut, nil
+
 }

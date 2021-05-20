@@ -76,6 +76,22 @@ func readConfigFiles(confFlag *string) (err error) {
 			continue
 		}
 
+		// test1 := "mqTT://Test.Com"
+		// outUrl, _ := url.Parse(test1)
+
+		// // paho does not understand mqtt or mqtts schema
+		// host := outUrl.Host
+		// if strings.EqualFold(outUrl.Scheme, "mqtt") && strings.Index(host, ":") < 0 {
+		// 	// Schema is mqtt and no port specifies
+		// 	host += ":1883"
+		// }
+		// if strings.EqualFold(outUrl.Scheme, "mqtts://") && strings.Index(host, ":") < 0 {
+		// 	// Schema is mqtts and no port specifies
+		// 	host += ":8883"
+		// }
+
+		// fmt.Printf("Routes: %v", host)
+
 		for _, route := range config.Routes {
 			route.FileName = nameName
 			Config.Routes = append(Config.Routes, route)

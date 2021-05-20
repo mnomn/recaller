@@ -25,7 +25,7 @@ install_rpi: build_rpi
 	$(info "REMOTE_HOST: $(REMOTE_HOST)" )
 	scp $(prog) "$(REMOTE_HOST):"
 	scp install_r2c.sh "$(REMOTE_HOST):"
-	ssh $(REMOTE_HOST) "sudo bash install_r2c.sh"
+	ssh $(REMOTE_HOST) "sudo bash install_r2c.sh -r"
 
 test:
 	go test
