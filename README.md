@@ -1,6 +1,6 @@
 # Route2cloud
 
-A service that listens for http POST or PUT and re-sends mesasges to another url. The resend can append security and use a different schema: http, https or mqtt. It is also possible to add username and password, http headers or certificates. It is designed to let small devices (IoT) in a local network send its data to external servers which requires protocols and security not supported by the device.
+A service that listens for http POST or PUT and re-sends messages to another url. The resend can append security and use a different schema: http, https or mqtt. It is also possible to add username and password, http headers or certificates. It is designed to let small devices (IoT) in a local network send its data to external servers which requires protocols and security not supported by the device.
 
 ## Example
 
@@ -9,21 +9,21 @@ username= "user1"
 password="password1"
 
 [[routes]]
-in= "/test12"
+in= "/test1"
 out= "https://acme.org/measurements"
 header= "ApiKey:SecretXYZ!"
 
 [[Routes]]
-in="/test11"
+in="/test2"
 out="mqtt://localhost"
 topic= "testdata"
 username= "mqttUser"
 password= "pass123"
 ```
 
-Incomming http requests must use basic authentication with user1:password1 and use default port 8222.
+Incoming http requests must use basic authentication with user1:password1 and use default port 8222.
 
-A post to `http://touser1:password1@192.168.0.22:8222/test2` will be re-posted to with an extra header to https://acme.org/measurements with the same body.
+A post to `http://touser1:password1@192.168.0.22:8222/test1` will be re-posted with an extra header to https://acme.org/measurements with the same body.
 
 A post to `http://touser1:password1@192.168.0.22:8222/test2` will be re-sent as mqtt to localhost. Mqtt login is mqttUser:pass123 and the topic will be "testdata".
 
@@ -44,19 +44,18 @@ Build and copy binary to target machine.
 
 For linux and raspberry pi
 
-- Copy route2cloud and install_r2c.sh to target computer.
+- Copy the built route2cloud and install_r2c.sh to the target computer.
 - Run `sudo bash install_r2c.sh`
-- Add configuration file(s)"
+- Add configuration file(s)
 
 ### Configuration format
 
-Configuration is defined in one or many files. Files must be in config folder (default usr/local/etc/route2cloud/). Configuration files can be called anything, as long as they end in ".conf". Toml and json is supported. See examples in configuration_files directory.
+Configuration is defined in one or many files located in the config folder (default usr/local/etc/route2cloud/). Files can be called anything, as long as they end in ".conf". Both toml and json is supported. See examples in configuration_files directory.
 
 #### Top level configuration
 
-http and and username/password. Default 8222 without password. Only set this in one place/file.
+Hppt port and username/password can be defined. Default 8222 without password. Only set this in one place/file.
 
 #### Routes configuration
 
-The "routes" is a list of rules for how to resend incomming requests.
-
+The "routes" is a list of rules for how to resend requests. An incoming http request results in an outgoing request to the url specified in "out".
