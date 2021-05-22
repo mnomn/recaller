@@ -64,9 +64,10 @@ func sendHttp(postString string, route Route) {
 	fmt.Printf("Route %v to %v using http POST \n", route.In, route.Out[0:20])
 	req, err := http.NewRequest("POST", route.Out, strings.NewReader(postString))
 
-	if len(route.HeaderKey) > 0 && len(route.HeaderValue) > 0 {
-		req.Header.Set(route.HeaderKey, route.HeaderValue)
+	if separator := strings.Index(route.Header, ":"); separator > 0 {
+		req.Header.Set(route.Header[:separator], route.Header[separator+1:])
 	}
+
 	req.Header.Set("Content-Type", "application/json")
 
 	var client *http.Client

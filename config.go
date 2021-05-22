@@ -1,37 +1,39 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	toml "github.com/komkom/toml"
 )
 
 type RootConfig struct {
-	Address  string  `json: "address"`
-	Username string  `json: "username"`
-	Password string  `json: "password"`
-	Debug    int     `json: "debug"`
-	Routes   []Route `json: "routes"`
+	Address  string  `json:"address"`
+	Username string  `json:"username"`
+	Password string  `json:"password"`
+	Debug    int     `json:"debug"`
+	Routes   []Route `json:"routes"`
 }
 
 type Route struct {
-	FileName       string `json: "-"`
-	In             string `json: "in"`
-	Out            string `json: "out"`
-	Topic          string `json: "topic"`
-	Username       string `json: "username"`
-	Password       string `json: "password"`
-	HeaderKey      string `json: "headerKey"` // TODO: Combine to header key and value
-	HeaderValue    string `json: "headerValue"`
-	RegexpFind     string `json: "regexpFind"`
-	RegexpReplace  string `json: "regexpReplace"`
-	PrivateKeyFile string `json: "privateKeyFile"`
-	CertFile       string `json: "certFile"`
-	RoootCaFile    string `json: "rootCaFile"`
-	Debug          int    `json: "debug"`
+	FileName       string `json:"-"`
+	In             string `json:"in"`
+	Out            string `json:"out"`
+	Topic          string `json:"topic"`
+	Username       string `json:"username"`
+	Password       string `json:"password"`
+	Header         string `json:"header"`
+	RegexpFind     string `json:"regexpFind"`
+	RegexpReplace  string `json:"regexpReplace"`
+	PrivateKeyFile string `json:"privateKeyFile"`
+	CertFile       string `json:"certFile"`
+	RoootCaFile    string `json:"rootCaFile"`
+	Debug          int    `json:"debug"`
 }
 
 // Read one or many config fies and store here
@@ -42,7 +44,6 @@ func readConfigFiles(confFlag *string) (err error) {
 	if len(*confFlag) < 1 {
 		*confFlag, _ = os.Getwd()
 	}
-	fmt.Println("Reading configuration files in " + *confFlag)
 
 	files, err := ioutil.ReadDir(*confFlag)
 	if err != nil {
@@ -51,51 +52,35 @@ func readConfigFiles(confFlag *string) (err error) {
 	}
 
 	for _, file := range files {
-		nameName := file.Name()
-		if !strings.HasSuffix(nameName, ".conf") {
+		var thisConfig RootConfig
+
+		shortName := file.Name()
+		if !strings.HasSuffix(shortName, ".conf") {
 			continue
 		}
-		fmt.Println("Read config " + nameName)
+		fullName := *confFlag + "/" + shortName
 
-		var config RootConfig
-
-		raw, err := ioutil.ReadFile(*confFlag + "/" + nameName)
+		// Load both toml and json.
+		// Try toml first
+		fileBytes, err := ioutil.ReadFile(fullName)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		if err := json.Unmarshal(raw, &config); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		readGlobalValues(config)
-
-		if config.Routes == nil {
+			fmt.Printf("Failed to read config file %v ", fullName)
 			continue
 		}
 
-		// test1 := "mqTT://Test.Com"
-		// outUrl, _ := url.Parse(test1)
+		dec := json.NewDecoder(toml.New(bytes.NewBuffer(fileBytes)))
+		tomlErr := dec.Decode(&thisConfig)
 
-		// // paho does not understand mqtt or mqtts schema
-		// host := outUrl.Host
-		// if strings.EqualFold(outUrl.Scheme, "mqtt") && strings.Index(host, ":") < 0 {
-		// 	// Schema is mqtt and no port specifies
-		// 	host += ":1883"
-		// }
-		// if strings.EqualFold(outUrl.Scheme, "mqtts://") && strings.Index(host, ":") < 0 {
-		// 	// Schema is mqtts and no port specifies
-		// 	host += ":8883"
-		// }
-
-		// fmt.Printf("Routes: %v", host)
-
-		for _, route := range config.Routes {
-			route.FileName = nameName
-			Config.Routes = append(Config.Routes, route)
+		if tomlErr != nil {
+			if err := json.Unmarshal(fileBytes, &thisConfig); err != nil {
+				fmt.Printf("Failed to parse %v\n", fullName)
+				continue
+			}
 		}
+
+		fmt.Println("Read config " + fullName)
+
+		updateGlobalValues(thisConfig)
 	}
 
 	if Config.Debug > 0 {
@@ -108,7 +93,7 @@ func readConfigFiles(confFlag *string) (err error) {
 	return //err
 }
 
-func readGlobalValues(configFromFile RootConfig) {
+func updateGlobalValues(configFromFile RootConfig) {
 	// Only overwrite if values are set
 	if configFromFile.Address != "" {
 		Config.Address = configFromFile.Address
@@ -121,6 +106,20 @@ func readGlobalValues(configFromFile RootConfig) {
 	}
 	if configFromFile.Debug > Config.Debug {
 		Config.Debug = configFromFile.Debug
+	}
+
+	if configFromFile.Routes == nil {
+		readConfig()
+	}
+
+	for _, route := range configFromFile.Routes {
+		Config.Routes = append(Config.Routes, route)
+		if len(route.Header) > 0 {
+			separator := strings.Index(route.Header, ":")
+			if separator < 0 {
+				fmt.Printf("Weader \"%v\" does not contain \":\"\n", route.Header)
+			}
+		}
 	}
 }
 
