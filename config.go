@@ -27,6 +27,7 @@ type Route struct {
 	Topic          string `json:"topic"`
 	Username       string `json:"username"`
 	Password       string `json:"password"`
+	Method         string `json:"method"`
 	Header         string `json:"header"`
 	RegexpFind     string `json:"regexpFind"`
 	RegexpReplace  string `json:"regexpReplace"`

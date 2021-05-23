@@ -20,9 +20,6 @@ func check(err error) {
 
 func routeTraffic(path string, body string) {
 	var routed int
-	if Config.Debug > 0 {
-		fmt.Printf("Incoming path: %v\n", path)
-	}
 	for _, route := range Config.Routes {
 		normalizeIn(&path)
 		normalizeIn(&route.In)
@@ -33,22 +30,18 @@ func routeTraffic(path string, body string) {
 				continue
 			}
 
-			if Config.Debug > 1 || route.Debug > 1 {
-				fmt.Printf("Path %v configured\n", path)
-			}
-
 			newBody := TransformBody(body, route)
 
 			if strings.HasPrefix(route.Out, "mqtt") {
 				sendMqtt(string(newBody), route)
 				routed += 1
-				return
+				continue // to allow other routes for same input
 			}
 
 			if strings.HasPrefix(route.Out, "http") {
 				sendHttp(string(newBody), route)
 				routed += 1
-				return
+				continue // to allow other routes for same input
 			}
 		}
 	}
@@ -61,8 +54,12 @@ func routeTraffic(path string, body string) {
 
 func sendHttp(postString string, route Route) {
 	// HTTP Post is default protocol
-	fmt.Printf("Route %v to %v using http POST \n", route.In, route.Out[0:20])
-	req, err := http.NewRequest("POST", route.Out, strings.NewReader(postString))
+
+	method := "POST"
+	if route.Method != "" {
+		method = route.Method
+	}
+	req, err := http.NewRequest(method, route.Out, strings.NewReader(postString))
 
 	if separator := strings.Index(route.Header, ":"); separator > 0 {
 		req.Header.Set(route.Header[:separator], route.Header[separator+1:])
@@ -86,12 +83,12 @@ func sendHttp(postString string, route Route) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		fmt.Printf("FAILED to route %v to %v using http POST \n", route.In, route.Out)
+		return
 	}
-	logCall(route.In, route.Out, resp.Status)
-	fmt.Printf("Send http to %v\n", route.Out)
 	defer resp.Body.Close()
 
+	fmt.Printf("Route %v to %v using http %v, Result %v\n", route.In, method, route.Out, resp.Status)
 }
 
 func sendMqtt(postString string, route Route) {
@@ -101,8 +98,6 @@ func sendMqtt(postString string, route Route) {
 		fmt.Printf("Invalid out url: %v", serverString)
 		return
 	}
-
-	fmt.Printf("Broker: %v\n", serverString)
 
 	opts := MQTT.NewClientOptions().AddBroker(serverString)
 
@@ -118,7 +113,7 @@ func sendMqtt(postString string, route Route) {
 		opts.SetPassword(route.Password)
 	}
 
-	fmt.Printf("Route to mqtt broker %v, topic %v\n", serverString, topic)
+	fmt.Printf("Route %v to %v, topic %v\n", route.In, route.Out, topic)
 
 	cid := "ClientID"
 	opts.SetClientID(cid)
@@ -154,7 +149,6 @@ func sendMqtt(postString string, route Route) {
 			fmt.Printf(result)
 		}
 	}
-	logCall(route.In, topic, result)
 	c.Disconnect(250)
 }
 
