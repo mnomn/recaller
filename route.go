@@ -88,7 +88,7 @@ func sendHttp(postString string, route Route) {
 	}
 	defer resp.Body.Close()
 
-	fmt.Printf("Route %v to %v using http %v, Result %v\n", route.In, method, route.Out, resp.Status)
+	fmt.Printf("Route %v to %v %v, result: %v\n", route.In, method, route.Out, resp.Status)
 }
 
 func sendMqtt(postString string, route Route) {
