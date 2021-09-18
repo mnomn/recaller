@@ -5,20 +5,20 @@ A service that listens for http POST or PUT and re-sends messages to another url
 ## Example
 
 ```toml
-username= "user1"
+username="user1"
 password="password1"
 
 [[routes]]
-in= "/test1"
-out= "https://acme.org/measurements"
-header= "ApiKey:SecretXYZ!"
+in="/test1"
+out="https://acme.org/measurements"
+header="ApiKey:SecretXYZ!"
 
-[[Routes]]
+[[routes]]
 in="/test2"
 out="mqtt://localhost"
-topic= "testdata"
-username= "mqttUser"
-password= "pass123"
+topic="testdata"
+username="mqttUser"
+password="pass123"
 ```
 
 Incoming http requests must use basic authentication with user1:password1 and use default port 8222.
@@ -54,8 +54,8 @@ Configuration is defined in one or many files located in the config folder (defa
 
 #### Top level configuration
 
-Hppt port and username/password can be defined. Default 8222 without password. Only set this in one place/file.
+Http port and username/password can be defined. Default is port 8222 without login. Only set this in one place/file.
 
 #### Routes configuration
 
-The "routes" is a list of rules for how to resend requests. An incoming http request results in an outgoing request to the url specified in "out".
+The "routes" is a list of rules for how to resend requests. An incoming http POST or PUT results in an outgoing call to http,(s) or mqttm specified in "out".
