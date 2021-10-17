@@ -1,61 +1,73 @@
-# Route2cloud
+# Route2Cloud
 
-A service that listens for http POST or PUT and re-sends messages to another url. The resend can append security and use a different schema: http, https or mqtt. It is also possible to add username and password, http headers or certificates. It is designed to let small devices (IoT) in a local network send its data to external servers which requires protocols and security not supported by the device.
+It is designed to let small devices (IoT) in a local network send its data to external servers which requires protocols and security not supported by the device.
 
-## Example
+This service listens to insecure http POST or PUT and re-sends messages to another host. The resend can append security and use a different schema: http, https or mqtt. It is also possible to add username and password, http headers or certificates.
+
+The incoming request body must be in JSON format. By default the body is resent unmodified in the outgoing request. It is posible to reformat the outgoing body with a template and overwrite Content-Type.
+
+## Build
+
+You can bild with standard go tools. For example `go build` or cross compile `env GOOS=linux GOARCH=arm GOARM=5 go build -o route2cloud`
+
+It is also possible to use Makefile to build and install. For example `make install_pi`, which is a raspbery pi specific build and install target.
+
+## Install
+
+Copy the binary route2cloud to the target system and run it.
+
+## Configuration
+
+Configuration is defined in one or many files located in the config directory. Set config dir with "-d": `route2cloud -d /my/conf/dir`. All files with .conf will be red and they can be in toml or json format. See examples in configuration_files directory or below.
+
+### Top level configuration
+
+`port`: Set which port incomming calls shall use. Default 8222.
+
+`username` and `password`: Login needed to call this service, using "Basic Authentication". If omitted, no login is needed.
+
+### Routes configuration
+
+The "routes" is a list of rules for how to resend requests.
+
+## Examples
 
 ```toml
+# File: "route2cloud.conf"
+
 username="user1"
 password="password1"
 
 [[routes]]
-in="/test1"
-out="https://acme.org/measurements"
-header="ApiKey:SecretXYZ!"
+in = "/test1"
+out = "https://acme.org/measurements"
+headers = ["ApiKey:SecretXYZ!"]
 
 [[routes]]
-in="/test2"
-out="mqtt://localhost"
-topic="testdata"
-username="mqttUser"
-password="pass123"
+in = "/test2"
+out = "mqtt://localhost"
+topic = "testdata"
+username = "mqttUser"
+password = "pass123"
+
+[[routes]]
+in = "/test3"
+out = "http://influx.myserver.com/api/v2/write?orgID=1111122222&bucket=bucket1"
+headers = ["Content-Type:text/plain; charset=utf-8", "Authorization: Token abc123abc123abc123"]
+bodyTemplate = "sensor_values,sensor_id={{.sensor}} temperature={{values.T}}"
 ```
 
-Incoming http requests must use basic authentication with user1:password1 and use default port 8222.
+With this config file, all incoming http requests must use basic authentication with user1:password1 and use default port 8222.
 
-A post to `http://touser1:password1@192.168.0.22:8222/test1` will be re-posted with an extra header to https://acme.org/measurements with the same body.
+### Example 1
 
-A post to `http://touser1:password1@192.168.0.22:8222/test2` will be re-sent as mqtt to localhost. Mqtt login is mqttUser:pass123 and the topic will be "testdata".
+A post to `http://user1:password1@<ip>:8222/test1` will be re-posted with an extra header to `https://acme.org/measurements` with the same body.
 
-## Build
+### Example 2
 
-- Clone the git and set up the go compiler (golang.com)
-- Init the go module: `go mod init github.com/mnomn/route2cloud`, 
-- Build: `go build`
+A post to `http://user1:password1@<ip>:8222/test2` will be re-sent as mqtt to localhost. Mqtt login is mqttUser:pass123 and the topic will be "testdata".
 
-### Cross compile
+### Example 3
 
-It is also possible to build for another target, like raspberry pi:  
-`env GOOS=linux GOARCH=arm GOARM=5 go build -o route2cloud`
-
-## Install and Configure
-
-Build and copy binary to target machine.
-
-For linux and raspberry pi
-
-- Copy the built route2cloud and install_r2c.sh to the target computer.
-- Run `sudo bash install_r2c.sh`
-- Add configuration file(s)
-
-### Configuration format
-
-Configuration is defined in one or many files located in the config folder (default usr/local/etc/route2cloud/). Files can be called anything, as long as they end in ".conf". Both toml and json is supported. See examples in configuration_files directory.
-
-#### Top level configuration
-
-Http port and username/password can be defined. Default is port 8222 without login. Only set this in one place/file.
-
-#### Routes configuration
-
-The "routes" is a list of rules for how to resend requests. An incoming http POST or PUT results in an outgoing call to http,(s) or mqttm specified in "out".
+A post to `http://user1:password1@<ip>:8222/test3` will be re-sent as plain text, not json. The bodyTemplate is used to create the outgoing body. For example incoming json `{"sensor":"S4","values":{"T":23.4,"unit":"C"}}` will be converted to text `sensor_values,sensor_id=S4 temperature=23.4"`.
+If the incoming json does not fit the template, no message will be sent.

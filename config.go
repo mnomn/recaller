@@ -21,30 +21,42 @@ type RootConfig struct {
 }
 
 type Route struct {
-	FileName       string `json:"-"`
-	In             string `json:"in"`
-	Out            string `json:"out"`
-	Topic          string `json:"topic"`
-	Username       string `json:"username"`
-	Password       string `json:"password"`
-	Method         string `json:"method"`
-	Header         string `json:"header"`
-	RegexpFind     string `json:"regexpFind"`
-	RegexpReplace  string `json:"regexpReplace"`
-	PrivateKeyFile string `json:"privateKeyFile"`
-	CertFile       string `json:"certFile"`
-	RoootCaFile    string `json:"rootCaFile"`
-	Debug          int    `json:"debug"`
+	FileName string `json:"-"`
+	In       string `json:"in"`
+	Out      string `json:"out"`
+	Topic    string `json:"topic"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Method   string `json:"method"`
+	//	Header         string   `json:"header"`
+	Headers        []string `json:"headers"`
+	BodyTemplate   string   `json:"bodyTemplate"`
+	PrivateKeyFile string   `json:"privateKeyFile"`
+	CertFile       string   `json:"certFile"`
+	RoootCaFile    string   `json:"rootCaFile"`
+	Debug          int      `json:"debug"`
 }
 
 // Read one or many config fies and store here
 var Config RootConfig
 
+// Remove leading "/"
+func normalizeInPath(in *string) {
+	if len(*in) > 0 && (*in)[0] == '/' {
+		s2 := (*in)[1:]
+		*in = s2
+	}
+	*in = strings.ToLower(*in)
+}
+
 func readConfigFiles(confFlag *string) (err error) {
 	err = nil
 	if len(*confFlag) < 1 {
 		*confFlag, _ = os.Getwd()
+		fmt.Printf("Using default config dir: %s\n", *confFlag)
 	}
+
+	fmt.Printf("Read \"*.conf\" files from %s\n", *confFlag)
 
 	files, err := ioutil.ReadDir(*confFlag)
 	if err != nil {
@@ -69,26 +81,21 @@ func readConfigFiles(confFlag *string) (err error) {
 			continue
 		}
 
+		// First try to read as TOML ...
 		dec := json.NewDecoder(toml.New(bytes.NewBuffer(fileBytes)))
 		tomlErr := dec.Decode(&thisConfig)
 
 		if tomlErr != nil {
+			// ... then try read as JSON
 			if err := json.Unmarshal(fileBytes, &thisConfig); err != nil {
 				fmt.Printf("Failed to parse %v\n", fullName)
 				continue
 			}
 		}
 
-		fmt.Println("Read config " + fullName)
+		fmt.Println("Read " + fullName)
 
 		updateGlobalValues(thisConfig)
-	}
-
-	if Config.Debug > 0 {
-		fmt.Println("Routes:")
-		for _, r := range Config.Routes {
-			fmt.Printf("  %v -> %v\n", r.In, r.Out)
-		}
 	}
 
 	return //err
@@ -110,17 +117,19 @@ func updateGlobalValues(configFromFile RootConfig) {
 	}
 
 	if configFromFile.Routes == nil {
-		readConfig()
+		return
 	}
 
 	for _, route := range configFromFile.Routes {
-		Config.Routes = append(Config.Routes, route)
-		if len(route.Header) > 0 {
-			separator := strings.Index(route.Header, ":")
-			if separator < 0 {
-				fmt.Printf("Weader \"%v\" does not contain \":\"\n", route.Header)
-			}
+		rawIn := route.In
+		normalizeInPath(&route.In)
+		if route.In == "" {
+			fmt.Printf("Route \"in\" missing, too short or invalid \"%v\"\n", rawIn)
+			continue
 		}
+
+		Config.Routes = append(Config.Routes, route)
+		fmt.Printf("  route %v -> %v\n", rawIn, route.Out)
 	}
 }
 

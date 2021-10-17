@@ -6,46 +6,71 @@ import (
 	"testing"
 )
 
-func TestTransIFTTT2AIO(t *testing.T) {
-	// Transfer from ifttt format {value1:123, value2:321, value3:987}
-	// to adafruit.io {value:123 ...} (assuming value2 and value 3 can be left in the body)
-	// Also: Convert value 2 to {value2:321}. That way one post to route2cloud
-	// can result in two posts to "cloud".
-
+func TestTransformBody(t *testing.T) {
 	var route Route
-	route_string := `{"in":"regextest","regexpFind":"value1", "regexpReplace":"value"}`
-	if err := json.Unmarshal([]byte(route_string), &route); err != nil {
-		t.Errorf("Bad input! %v", err)
+	body := `
+	{
+		"sensor":"S4",
+		"values": {
+			"T":23.4,
+			"unit":"C"
+		}
+	}`
+	raw := `
+	{
+		"in":"test",
+		"bodyTemplate":"sensor_values,sensor_id={{.sensor}} temperature={{.values.T}},client=r2c"
+	}`
+	if err := json.Unmarshal([]byte(raw), &route); err != nil {
+		panic(err)
 	}
-	body := `{"value1":123, "value2":321, "value3":987}`
-	res := TransformBody(body, route)
-	if strings.Index(res, `"value":123`) < 0 {
-		t.Errorf("Transformation 1 failed %v\n", res)
-	}
+	transformedBody, err := TransformBody(body, route)
 
-	route_string = `{"in":"regextest","regexpFind":"value2", "regexpReplace":"value"}`
-	if err := json.Unmarshal([]byte(route_string), &route); err != nil {
-		t.Errorf("Bad input! %v", err)
-	}
-	res = TransformBody(body, route)
-	if strings.Index(res, `"value":321`) < 0 {
-		t.Errorf("Transformation 2 failed %v\n", res)
+	if err != nil || !strings.Contains(transformedBody, "sensor") || !strings.Contains(transformedBody, "temperature=23.4") {
+		t.Errorf("Bad TransformBody %v", transformedBody)
 	}
 }
 
-// func TestTransformBody(postString string, url_config map[string]interface{}) {
-
-func TestTransformBody(t *testing.T) {
+func TestTransformWrongInput(t *testing.T) {
+	// Verify graceful handeling if incomming json does not fit template
 	var route Route
-	body := `{"value1":123, "value2":321, "value3":987}`
-	raw := `{"in":"regextest","regexpFind":"value1", "regexpReplace":"banan"}`
+	body := `{"bananas":11}`
+
+	raw := `
+	{
+		"in":"test2",
+		"bodyTemplate":"sensor_values,sensor_id={{.sensor}} temperature={{.values.T}},client=r2c"
+	}`
 	if err := json.Unmarshal([]byte(raw), &route); err != nil {
-		t.Errorf("Bad input! %v", err)
-	}
-	newBody := TransformBody(body, route)
-
-	if newBody != `{"banan":123, "value2":321, "value3":987}` {
-		t.Errorf("Bad TransformBody %v", newBody)
+		panic(err)
 	}
 
+	transformedBody, err := TransformBody(body, route)
+
+	if err == nil || transformedBody != "" {
+		t.Error("Expected error, wrong input")
+	}
+}
+
+func TestNoTemplate(t *testing.T) {
+	// Body should be intact if there is no bodyTemplate
+	var route Route
+	body := `
+	{
+		"bananas":11,
+		"apples": 22
+	}`
+	raw := `
+	{
+		"in":"test3"
+	}`
+	if err := json.Unmarshal([]byte(raw), &route); err != nil {
+		panic(err)
+	}
+
+	transformedBody, err := TransformBody(body, route)
+
+	if err != nil || body != transformedBody {
+		t.Error("Expected error, wrong input")
+	}
 }

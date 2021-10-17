@@ -43,4 +43,3 @@ mkdir -p ${INSTALL_PATH}/etc/${PROG_NAME}
 }
 
 echo "${PROG_NAME} installed"
-
