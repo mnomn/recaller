@@ -16,15 +16,17 @@ It is also possible to use Makefile to build and install. For example `make inst
 
 Copy the binary route2cloud to the target system and run it.
 
-### Configuration format
+## Configuration
 
 Configuration is defined in one or many files located in the config directory. Set config dir with "-d": `route2cloud -d /my/conf/dir`. All files with .conf will be red and they can be in toml or json format. See examples in configuration_files directory or below.
 
-#### Top level configuration
+### Top level configuration
 
-Http port and username/password can be defined. Default is port 8222 without login. Only set this in one place/file.
+`port`: Set which port incomming calls shall use. Default 8222.
 
-#### Routes configuration
+`username` and `password`: Login needed to call this service, using "Basic Authentication". If omitted, no login is needed.
+
+### Routes configuration
 
 The "routes" is a list of rules for how to resend requests.
 
