@@ -17,14 +17,6 @@ import (
 
 var exedir string
 
-// Remove leading "/"
-func normalizeIn(in *string) {
-	if len(*in) > 0 && (*in)[0] == '/' {
-		s2 := (*in)[1:]
-		*in = s2
-	}
-}
-
 func handleNothing(w http.ResponseWriter, r *http.Request) {
 }
 

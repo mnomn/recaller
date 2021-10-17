@@ -4,13 +4,34 @@ It is designed to let small devices (IoT) in a local network send its data to ex
 
 This service listens to insecure http POST or PUT and re-sends messages to another host. The resend can append security and use a different schema: http, https or mqtt. It is also possible to add username and password, http headers or certificates.
 
-The input body must be in JSON format. By default the body is resent as it came in. It is posible to reformat it with templates and overwrite Contant-Type.
+The incoming request body must be in JSON format. By default the body is resent unmodified in the outgoing request. It is posible to reformat the outgoing body with a template and overwrite Content-Type.
+
+## Build
+
+You can bild with standard go tools. For example `go build` or cross compile `env GOOS=linux GOARCH=arm GOARM=5 go build -o route2cloud`
+
+It is also possible to use Makefile to build and install. For example `make install_pi`, which is a raspbery pi specific build and install target.
+
+## Install
+
+Copy the binary route2cloud to the target system and run it.
+
+### Configuration format
+
+Configuration is defined in one or many files located in the config directory. Set config dir with "-d": `route2cloud -d /my/conf/dir`. All files with .conf will be red and they can be in toml or json format. See examples in configuration_files directory or below.
+
+#### Top level configuration
+
+Http port and username/password can be defined. Default is port 8222 without login. Only set this in one place/file.
+
+#### Routes configuration
+
+The "routes" is a list of rules for how to resend requests.
 
 ## Examples
 
-
 ```toml
-# Config file "route2cloud.conf"
+# File: "route2cloud.conf"
 
 username="user1"
 password="password1"
@@ -37,44 +58,14 @@ bodyTemplate = "sensor_values,sensor_id={{.sensor}} temperature={{values.T}}"
 With this config file, all incoming http requests must use basic authentication with user1:password1 and use default port 8222.
 
 ### Example 1
-A post to `http://user1:password1@<ip>:8222/test1` will be re-posted with an extra header to https://acme.org/measurements with the same body.
+
+A post to `http://user1:password1@<ip>:8222/test1` will be re-posted with an extra header to `https://acme.org/measurements` with the same body.
 
 ### Example 2
+
 A post to `http://user1:password1@<ip>:8222/test2` will be re-sent as mqtt to localhost. Mqtt login is mqttUser:pass123 and the topic will be "testdata".
 
 ### Example 3
-A post to `http://user1:password1@<ip>:8222/test3` will be re-sent as plain text, not json. The bodyTemplate is used do create the outgoing body. For example incomming json `{"sensor":"S4","values":{"T":23.4,"unit":"C"}}` will be converted to text `sensor_values,sensor_id=S4 temperature=23.4"`.
-If the incomming json does not fit the template, no message will be sent.
 
-## Build
-
-- Clone the git and set up the go compiler (golang.com)
-- Init the go module: `go mod init github.com/mnomn/route2cloud`
-- Build: `go build`
-
-### Cross compile
-
-It is also possible to build for another target, like raspberry pi:  
-`env GOOS=linux GOARCH=arm GOARM=5 go build -o route2cloud`
-
-## Install and Configure
-
-Build and copy binary to target machine.
-
-For linux and raspberry pi
-
-- Copy the built route2cloud and install_r2c.sh to the target computer.
-- Run `sudo bash install_r2c.sh`
-- Add configuration file(s)
-
-### Configuration format
-
-Configuration is defined in one or many files located in the config folder (default usr/local/etc/route2cloud/). Files can be called anything, as long as they end in ".conf". Both toml and json is supported. See examples in configuration_files directory.
-
-#### Top level configuration
-
-Http port and username/password can be defined. Default is port 8222 without login. Only set this in one place/file.
-
-#### Routes configuration
-
-The "routes" is a list of rules for how to resend requests. An incoming http POST or PUT results in an outgoing call to http,(s) or mqttm specified in "out".
+A post to `http://user1:password1@<ip>:8222/test3` will be re-sent as plain text, not json. The bodyTemplate is used to create the outgoing body. For example incoming json `{"sensor":"S4","values":{"T":23.4,"unit":"C"}}` will be converted to text `sensor_values,sensor_id=S4 temperature=23.4"`.
+If the incoming json does not fit the template, no message will be sent.

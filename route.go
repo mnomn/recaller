@@ -20,10 +20,9 @@ func check(err error) {
 
 func routeTraffic(path string, body string) {
 	var routed int
+	normalizeInPath(&path) // routes "In" are normalized during startup/config
 	for _, route := range Config.Routes {
-		normalizeIn(&path)
-		normalizeIn(&route.In)
-		if strings.Index(path, route.In) == 0 {
+		if strings.HasPrefix(path, route.In) {
 
 			if len(route.Out) == 0 {
 				fmt.Printf("In {} has no out specified")

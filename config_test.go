@@ -20,20 +20,16 @@ func TestConfigFolder(t *testing.T) {
 	// Routes contain config from two files
 	foundA := false
 	foundB := false
+	inA := "/testA"
+	inB := "/testB"
+	normalizeInPath((&inA))
+	normalizeInPath((&inB))
 	for _, route := range Config.Routes {
-		if route.In == "/testA" {
+		if route.In == inA {
 			foundA = true
 		}
-		if route.In == "/testB" {
+		if route.In == inB {
 			foundB = true
-		}
-
-		if route.Headers != nil {
-			for _, hh := range route.Headers {
-				t.Logf("H %v", hh)
-			}
-		} else {
-			t.Log("No headers")
 		}
 	}
 	if !foundA || !foundB {
