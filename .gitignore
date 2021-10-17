@@ -13,7 +13,6 @@
 
 #OLAA
 route2cloud
-go.*
 *.service
 local_*
 
