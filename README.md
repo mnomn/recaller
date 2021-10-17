@@ -1,4 +1,4 @@
-# Route2cloud
+# Route2Cloud
 
 It is designed to let small devices (IoT) in a local network send its data to external servers which requires protocols and security not supported by the device.
 
@@ -6,36 +6,45 @@ This service listens to insecure http POST or PUT and re-sends messages to anoth
 
 The input body must be in JSON format. By default the body is resent as it came in. It is posible to reformat it with templates and overwrite Contant-Type.
 
-## Example
+## Examples
+
 
 ```toml
+# Config file "route2cloud.conf"
+
 username="user1"
 password="password1"
 
 [[routes]]
-in="/test1"
-out="https://acme.org/measurements"
-header="ApiKey:SecretXYZ!"
+in = "/test1"
+out = "https://acme.org/measurements"
+headers = ["ApiKey:SecretXYZ!"]
 
 [[routes]]
-in="/test2"
-out="mqtt://localhost"
-topic="testdata"
-username="mqttUser"
-password="pass123"
+in = "/test2"
+out = "mqtt://localhost"
+topic = "testdata"
+username = "mqttUser"
+password = "pass123"
 
 [[routes]]
-in ="/test3"
-out = "http://influx.myserver.com/api/v2/write"
-headers = ["Content-Type:text/plain; charset=utf-8", "ApiKey:SecretXYZ!"]
+in = "/test3"
+out = "http://influx.myserver.com/api/v2/write?orgID=1111122222&bucket=bucket1"
+headers = ["Content-Type:text/plain; charset=utf-8", "Authorization: Token abc123abc123abc123"]
 bodyTemplate = "sensor_values,sensor_id={{.sensor}} temperature={{values.T}}"
 ```
 
-Incoming http requests must use basic authentication with user1:password1 and use default port 8222.
+With this config file, all incoming http requests must use basic authentication with user1:password1 and use default port 8222.
 
-A post to `http://user1:password1@192.168.0.22:8222/test1` will be re-posted with an extra header to https://acme.org/measurements with the same body.
+### Example 1
+A post to `http://user1:password1@<ip>:8222/test1` will be re-posted with an extra header to https://acme.org/measurements with the same body.
 
-A post to `http://user1:password1@192.168.0.22:8222/test2` will be re-sent as mqtt to localhost. Mqtt login is mqttUser:pass123 and the topic will be "testdata".
+### Example 2
+A post to `http://user1:password1@<ip>:8222/test2` will be re-sent as mqtt to localhost. Mqtt login is mqttUser:pass123 and the topic will be "testdata".
+
+### Example 3
+A post to `http://user1:password1@<ip>:8222/test3` will be re-sent as plain text, not json. The bodyTemplate is used do create the outgoing body. For example incomming json `{"sensor":"S4","values":{"T":23.4,"unit":"C"}}` will be converted to text `sensor_values,sensor_id=S4 temperature=23.4"`.
+If the incomming json does not fit the template, no message will be sent.
 
 ## Build
 
