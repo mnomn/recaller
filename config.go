@@ -120,8 +120,6 @@ func updateGlobalValues(configFromFile RootConfig) {
 				separator := strings.Index(header, ":")
 				if separator < 0 {
 					fmt.Printf("Header \"%v\" does not contain \":\"\n", header)
-				} else {
-					fmt.Printf("Header \"%v\": \n", header)
 				}
 			}
 		}
