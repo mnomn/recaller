@@ -30,16 +30,19 @@ func routeTraffic(path string, body string) {
 				continue
 			}
 
-			newBody := TransformBody(body, route)
+			transformedBody, err := TransformBody(body, route)
+			if transformedBody == "" || err != nil {
+				fmt.Printf("In {} has no out specified")
+			}
 
 			if strings.HasPrefix(route.Out, "mqtt") {
-				sendMqtt(string(newBody), route)
+				sendMqtt(string(transformedBody), route)
 				routed += 1
 				continue // to allow other routes for same input
 			}
 
 			if strings.HasPrefix(route.Out, "http") {
-				sendHttp(string(newBody), route)
+				sendHttp(string(transformedBody), route)
 				routed += 1
 				continue // to allow other routes for same input
 			}
@@ -51,7 +54,6 @@ func routeTraffic(path string, body string) {
 		}
 	}
 }
-
 func sendHttp(postString string, route Route) {
 	// HTTP Post is default protocol
 
@@ -61,11 +63,19 @@ func sendHttp(postString string, route Route) {
 	}
 	req, err := http.NewRequest(method, route.Out, strings.NewReader(postString))
 
-	if separator := strings.Index(route.Header, ":"); separator > 0 {
-		req.Header.Set(route.Header[:separator], route.Header[separator+1:])
+	contentTyprSet := false
+	for _, header := range route.Headers {
+		if separator := strings.Index(header, ":"); separator > 0 {
+			req.Header.Set(header[:separator], header[separator+1:])
+			if strings.Contains(header, "application/json") {
+				contentTyprSet = true
+			}
+		}
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	if !contentTyprSet {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	var client *http.Client
 	if route.RoootCaFile != "" && route.CertFile != "" && route.PrivateKeyFile != "" {

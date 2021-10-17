@@ -27,6 +27,14 @@ func TestConfigFolder(t *testing.T) {
 		if route.In == "/testB" {
 			foundB = true
 		}
+
+		if route.Headers != nil {
+			for _, hh := range route.Headers {
+				t.Logf("H %v", hh)
+			}
+		} else {
+			t.Log("No headers")
+		}
 	}
 	if !foundA || !foundB {
 		t.Error("Did not read all config files\n")

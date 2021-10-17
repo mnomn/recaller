@@ -1,6 +1,10 @@
 # Route2cloud
 
-A service that listens for http POST or PUT and re-sends messages to another url. The resend can append security and use a different schema: http, https or mqtt. It is also possible to add username and password, http headers or certificates. It is designed to let small devices (IoT) in a local network send its data to external servers which requires protocols and security not supported by the device.
+It is designed to let small devices (IoT) in a local network send its data to external servers which requires protocols and security not supported by the device.
+
+This service listens to insecure http POST or PUT and re-sends messages to another host. The resend can append security and use a different schema: http, https or mqtt. It is also possible to add username and password, http headers or certificates.
+
+The input body must be in JSON format. By default the body is resent as it came in. It is posible to reformat it with templates and overwrite Contant-Type.
 
 ## Example
 
@@ -19,18 +23,24 @@ out="mqtt://localhost"
 topic="testdata"
 username="mqttUser"
 password="pass123"
+
+[[routes]]
+in ="/test3"
+out = "http://influx.myserver.com/api/v2/write"
+headers = ["Content-Type:text/plain; charset=utf-8", "ApiKey:SecretXYZ!"]
+bodyTemplate = "sensor_values,sensor_id={{.sensor}} temperature={{values.T}}"
 ```
 
 Incoming http requests must use basic authentication with user1:password1 and use default port 8222.
 
-A post to `http://touser1:password1@192.168.0.22:8222/test1` will be re-posted with an extra header to https://acme.org/measurements with the same body.
+A post to `http://user1:password1@192.168.0.22:8222/test1` will be re-posted with an extra header to https://acme.org/measurements with the same body.
 
-A post to `http://touser1:password1@192.168.0.22:8222/test2` will be re-sent as mqtt to localhost. Mqtt login is mqttUser:pass123 and the topic will be "testdata".
+A post to `http://user1:password1@192.168.0.22:8222/test2` will be re-sent as mqtt to localhost. Mqtt login is mqttUser:pass123 and the topic will be "testdata".
 
 ## Build
 
 - Clone the git and set up the go compiler (golang.com)
-- Init the go module: `go mod init github.com/mnomn/route2cloud`, 
+- Init the go module: `go mod init github.com/mnomn/route2cloud`
 - Build: `go build`
 
 ### Cross compile

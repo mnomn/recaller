@@ -21,20 +21,20 @@ type RootConfig struct {
 }
 
 type Route struct {
-	FileName       string `json:"-"`
-	In             string `json:"in"`
-	Out            string `json:"out"`
-	Topic          string `json:"topic"`
-	Username       string `json:"username"`
-	Password       string `json:"password"`
-	Method         string `json:"method"`
-	Header         string `json:"header"`
-	RegexpFind     string `json:"regexpFind"`
-	RegexpReplace  string `json:"regexpReplace"`
-	PrivateKeyFile string `json:"privateKeyFile"`
-	CertFile       string `json:"certFile"`
-	RoootCaFile    string `json:"rootCaFile"`
-	Debug          int    `json:"debug"`
+	FileName string `json:"-"`
+	In       string `json:"in"`
+	Out      string `json:"out"`
+	Topic    string `json:"topic"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Method   string `json:"method"`
+	//	Header         string   `json:"header"`
+	Headers        []string `json:"headers"`
+	BodyTemplate   string   `json:"bodyTemplate"`
+	PrivateKeyFile string   `json:"privateKeyFile"`
+	CertFile       string   `json:"certFile"`
+	RoootCaFile    string   `json:"rootCaFile"`
+	Debug          int      `json:"debug"`
 }
 
 // Read one or many config fies and store here
@@ -115,10 +115,14 @@ func updateGlobalValues(configFromFile RootConfig) {
 
 	for _, route := range configFromFile.Routes {
 		Config.Routes = append(Config.Routes, route)
-		if len(route.Header) > 0 {
-			separator := strings.Index(route.Header, ":")
-			if separator < 0 {
-				fmt.Printf("Weader \"%v\" does not contain \":\"\n", route.Header)
+		if len(route.Headers) > 0 {
+			for _, header := range route.Headers {
+				separator := strings.Index(header, ":")
+				if separator < 0 {
+					fmt.Printf("Header \"%v\" does not contain \":\"\n", header)
+				} else {
+					fmt.Printf("Header \"%v\": \n", header)
+				}
 			}
 		}
 	}
