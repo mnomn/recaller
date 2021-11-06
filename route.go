@@ -20,17 +20,18 @@ func check(err error) {
 }
 
 func logResults(start time.Time, route Route, postString string, err error) {
+	if err != nil {
+		fmt.Printf("Failed to route to %s -> %s: %s\n", route.In, route.Out, err.Error())
+		return
+	}
+
 	if Config.Debug > 2 || route.Debug > 2 {
 		fmt.Printf("Post data: %v\n", postString)
 	}
 
-	if err == nil {
-		elapsed := time.Since(start)
-		fmt.Printf("Route to %s -> %s: %s\n", route.In, route.Out, elapsed)
+	elapsed := time.Since(start)
+	fmt.Printf("Route to %s -> %s: %s\n", route.In, route.Out, elapsed)
 
-	} else {
-		fmt.Printf("Failed to route to %s -> %s: %s\n", route.In, route.Out, err.Error())
-	}
 }
 
 func routeTraffic(path string, body string) {
@@ -47,20 +48,23 @@ func routeTraffic(path string, body string) {
 
 			transformedBody, err := TransformBody(body, route)
 			if transformedBody == "" || err != nil {
-				fmt.Printf("In {} has no out specified")
+				fmt.Printf("Failed to transform body %v\n", body)
+				continue
 			}
 
+			var sendError error
+
 			if strings.HasPrefix(route.Out, "mqtt") {
-				sendMqtt(string(transformedBody), route)
+				sendError = sendMqtt(string(transformedBody), route)
 				routed += 1
 			} else if strings.HasPrefix(route.Out, "http") {
-				sendHttp(string(transformedBody), route)
+				sendError = sendHttp(string(transformedBody), route)
 				routed += 1
 			} else {
 				fmt.Printf("Unknown out schema %s. Use http or mqtt.", route.Out)
 			}
 
-			logResults(start, route, transformedBody, err)
+			logResults(start, route, transformedBody, sendError)
 		}
 	}
 
@@ -146,7 +150,6 @@ func sendMqtt(postString string, route Route) error {
 		}
 		tlsConf, err := makeTlsConfig(route.RoootCaFile, route.CertFile, route.PrivateKeyFile)
 		if err != nil {
-			fmt.Printf("TLS Config  error: %v\n", err)
 			return err
 		}
 		opts.SetTLSConfig(tlsConf)
@@ -154,16 +157,20 @@ func sendMqtt(postString string, route Route) error {
 	}
 
 	c := MQTT.NewClient(opts)
-	defer c.Disconnect(250)
+	if c == nil {
+		return fmt.Errorf("Cannot create MQTT client")
+	}
 
-	if token := c.Connect(); token.Wait() && token.Error() != nil {
+	token := c.Connect()
+	if token.Wait() && token.Error() != nil {
 		return token.Error()
-	} else {
-		token = c.Publish(topic, 0, false, postString)
-		token.Wait()
-		if token.Error() != nil {
-			return token.Error()
-		}
+	}
+
+	defer c.Disconnect(250)
+	token = c.Publish(topic, 0, false, postString)
+	token.Wait()
+	if token.Error() != nil {
+		return token.Error()
 	}
 
 	return nil
