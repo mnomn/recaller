@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
@@ -18,14 +19,29 @@ func check(err error) {
 	}
 }
 
+func logResults(start time.Time, route Route, postString string, err error) {
+	if Config.Debug > 2 || route.Debug > 2 {
+		fmt.Printf("Post data: %v\n", postString)
+	}
+
+	if err == nil {
+		elapsed := time.Since(start)
+		fmt.Printf("Route to %s -> %s: %s\n", route.In, route.Out, elapsed)
+
+	} else {
+		fmt.Printf("Failed to route to %s -> %s: %s\n", route.In, route.Out, err.Error())
+	}
+}
+
 func routeTraffic(path string, body string) {
 	var routed int
 	normalizeInPath(&path) // routes "In" are normalized during startup/config
 	for _, route := range Config.Routes {
 		if strings.HasPrefix(path, route.In) {
+			start := time.Now()
 
 			if len(route.Out) == 0 {
-				fmt.Printf("In {} has no out specified")
+				fmt.Printf("Route In=%s has no out specified", route.In)
 				continue
 			}
 
@@ -37,23 +53,24 @@ func routeTraffic(path string, body string) {
 			if strings.HasPrefix(route.Out, "mqtt") {
 				sendMqtt(string(transformedBody), route)
 				routed += 1
-				continue // to allow other routes for same input
-			}
-
-			if strings.HasPrefix(route.Out, "http") {
+			} else if strings.HasPrefix(route.Out, "http") {
 				sendHttp(string(transformedBody), route)
 				routed += 1
-				continue // to allow other routes for same input
+			} else {
+				fmt.Printf("Unknown out schema %s. Use http or mqtt.", route.Out)
 			}
+
+			logResults(start, route, transformedBody, err)
 		}
 	}
+
 	if routed == 0 {
 		if Config.Debug > 0 {
 			fmt.Printf("URL %v not routed.\n", path)
 		}
 	}
 }
-func sendHttp(postString string, route Route) {
+func sendHttp(postString string, route Route) error {
 	// HTTP Post is default protocol
 
 	method := "POST"
@@ -92,20 +109,19 @@ func sendHttp(postString string, route Route) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("FAILED to route %v to %v using http POST \n", route.In, route.Out)
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
-	fmt.Printf("Route %v to %v %v, result: %v\n", route.In, method, route.Out, resp.Status)
+	return nil
 }
 
-func sendMqtt(postString string, route Route) {
+func sendMqtt(postString string, route Route) error {
+
 	serverString, err := convertToMqttServerString(route.Out)
 
 	if err != nil {
-		fmt.Printf("Invalid out url: %v", serverString)
-		return
+		return err
 	}
 
 	opts := MQTT.NewClientOptions().AddBroker(serverString)
@@ -122,8 +138,6 @@ func sendMqtt(postString string, route Route) {
 		opts.SetPassword(route.Password)
 	}
 
-	fmt.Printf("Route %v to %v, topic %v\n", route.In, route.Out, topic)
-
 	cid := "ClientID"
 	opts.SetClientID(cid)
 	if route.RoootCaFile != "" || route.CertFile != "" || route.PrivateKeyFile != "" {
@@ -133,32 +147,26 @@ func sendMqtt(postString string, route Route) {
 		tlsConf, err := makeTlsConfig(route.RoootCaFile, route.CertFile, route.PrivateKeyFile)
 		if err != nil {
 			fmt.Printf("TLS Config  error: %v\n", err)
-			return
+			return err
 		}
 		opts.SetTLSConfig(tlsConf)
 		opts.SetCleanSession(true)
 	}
 
-	result := "OK"
 	c := MQTT.NewClient(opts)
-
-	if Config.Debug > 2 || route.Debug > 2 {
-		fmt.Printf("Mqtt data: %v\n", postString)
-	}
+	defer c.Disconnect(250)
 
 	if token := c.Connect(); token.Wait() && token.Error() != nil {
-		result = fmt.Sprintf("MQTT connection ERROR. %v\n", token.Error())
-		fmt.Printf(result)
-		return
+		return token.Error()
 	} else {
 		token = c.Publish(topic, 0, false, postString)
 		token.Wait()
 		if token.Error() != nil {
-			result = fmt.Sprintf("posted token err: %v\n", token.Error())
-			fmt.Printf(result)
+			return token.Error()
 		}
 	}
-	c.Disconnect(250)
+
+	return nil
 }
 
 // From https://github.com/manamanmana/aws-mqtt-chat-example

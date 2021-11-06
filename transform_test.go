@@ -21,12 +21,14 @@ func TestTransformBody(t *testing.T) {
 		"in":"test",
 		"bodyTemplate":"sensor_values,sensor_id={{.sensor}} temperature={{.values.T}},client=r2c"
 	}`
+
 	if err := json.Unmarshal([]byte(raw), &route); err != nil {
 		panic(err)
 	}
+
 	transformedBody, err := TransformBody(body, route)
 
-	if err != nil || !strings.Contains(transformedBody, "sensor") || !strings.Contains(transformedBody, "temperature=23.4") {
+	if err != nil || !strings.Contains(transformedBody, "sensor_id=S4") || !strings.Contains(transformedBody, "temperature=23.4") {
 		t.Errorf("Bad TransformBody %v", transformedBody)
 	}
 }

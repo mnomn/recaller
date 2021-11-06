@@ -21,14 +21,13 @@ type RootConfig struct {
 }
 
 type Route struct {
-	FileName string `json:"-"`
-	In       string `json:"in"`
-	Out      string `json:"out"`
-	Topic    string `json:"topic"`
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Method   string `json:"method"`
-	//	Header         string   `json:"header"`
+	FileName       string   `json:"-"`
+	In             string   `json:"in"`
+	Out            string   `json:"out"`
+	Topic          string   `json:"topic"`
+	Username       string   `json:"username"`
+	Password       string   `json:"password"`
+	Method         string   `json:"method"`
 	Headers        []string `json:"headers"`
 	BodyTemplate   string   `json:"bodyTemplate"`
 	PrivateKeyFile string   `json:"privateKeyFile"`
@@ -39,6 +38,8 @@ type Route struct {
 
 // Read one or many config fies and store here
 var Config RootConfig
+
+var MeasureTime bool
 
 // Remove leading "/"
 func normalizeInPath(in *string) {
@@ -56,8 +57,6 @@ func readConfigFiles(confFlag *string) (err error) {
 		fmt.Printf("Using default config dir: %s\n", *confFlag)
 	}
 
-	fmt.Printf("Read \"*.conf\" files from %s\n", *confFlag)
-
 	files, err := ioutil.ReadDir(*confFlag)
 	if err != nil {
 		fmt.Println(err)
@@ -67,14 +66,13 @@ func readConfigFiles(confFlag *string) (err error) {
 	for _, file := range files {
 		var thisConfig RootConfig
 
+		// Read all files ending with ".conf"
 		shortName := file.Name()
 		if !strings.HasSuffix(shortName, ".conf") {
 			continue
 		}
 		fullName := *confFlag + "/" + shortName
 
-		// Load both toml and json.
-		// Try toml first
 		fileBytes, err := ioutil.ReadFile(fullName)
 		if err != nil {
 			fmt.Printf("Failed to read config file %v ", fullName)
@@ -135,6 +133,9 @@ func updateGlobalValues(configFromFile RootConfig) {
 
 func readConfig() {
 	confFlag := flag.String("c", "", "Configuration directory, containing *.conf files. Default: Current directory.")
+	measureTime := flag.Bool("t", false, "Measure time, Default: false.")
 	flag.Parse()
+	MeasureTime = *measureTime
+	fmt.Printf("Configuration directory: %v, MeasureTime: %v\n", *confFlag, MeasureTime)
 	readConfigFiles(confFlag)
 }

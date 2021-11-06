@@ -25,7 +25,7 @@ Description=route2cloud
 After=network.target
 
 [Service]
-ExecStart=${INSTALL_PATH}/bin/${PROG_NAME} -c ${INSTALL_PATH}/etc/${PROG_NAME}
+ExecStart=${INSTALL_PATH}/bin/${PROG_NAME} -t -c ${INSTALL_PATH}/etc/${PROG_NAME}
 
 [Install]
 WantedBy=multi-user.target
