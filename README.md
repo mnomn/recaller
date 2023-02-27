@@ -1,6 +1,6 @@
 # Route2Cloud
 
-It is designed to let small devices (IoT) in a local network send its data to external servers which requires protocols and security not supported by the device.
+Route messages from small devices (IoT) in a local network to external servers which requires protocols and security not supported by the device.
 
 This service listens to insecure http POST or PUT and re-sends messages to another host. The resend can append security and use a different schema: http, https or mqtt. It is also possible to add username and password, http headers or certificates.
 
@@ -8,7 +8,7 @@ The incoming request body must be in JSON format. By default the body is resent 
 
 ## Build
 
-You can bild with standard go tools. For example `go build` or cross compile `env GOOS=linux GOARCH=arm GOARM=5 go build -o route2cloud`
+Bild with standard go tools. For example `go build` or cross compile `env GOOS=linux GOARCH=arm GOARM=5 go build -o route2cloud`
 
 It is also possible to use Makefile to build and install. For example `make install_pi`, which is a raspbery pi specific build and install target.
 

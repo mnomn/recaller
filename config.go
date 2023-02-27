@@ -50,14 +50,35 @@ func normalizeInPath(in *string) {
 	*in = strings.ToLower(*in)
 }
 
-func readConfigFiles(confFlag *string) (err error) {
-	err = nil
-	if len(*confFlag) < 1 {
-		*confFlag, _ = os.Getwd()
-		fmt.Printf("Using default config dir: %s\n", *confFlag)
+func readConfigFIle(fullName string) (RootConfig, error) {
+	var thisConfig RootConfig
+	var err error
+	fileBytes, err := ioutil.ReadFile(fullName)
+	if err != nil {
+		err = fmt.Errorf("Failed to read config file %v", fullName)
+		return thisConfig, err
 	}
 
-	files, err := ioutil.ReadDir(*confFlag)
+	// First try to read as TOML ...
+	dec := json.NewDecoder(toml.New(bytes.NewBuffer(fileBytes)))
+	tomlErr := dec.Decode(&thisConfig)
+
+	if tomlErr != nil {
+		// ... then try read as JSON
+		if err := json.Unmarshal(fileBytes, &thisConfig); err != nil {
+			err = fmt.Errorf("Failed to parse %v", fullName)
+			return thisConfig, err
+		}
+	}
+
+	fmt.Println("Read " + fullName)
+	return thisConfig, nil
+}
+
+func readConfigFiles(confDir *string) (err error) {
+	err = nil
+
+	files, err := ioutil.ReadDir(*confDir)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -71,27 +92,13 @@ func readConfigFiles(confFlag *string) (err error) {
 		if !strings.HasSuffix(shortName, ".conf") {
 			continue
 		}
-		fullName := *confFlag + "/" + shortName
+		fullName := *confDir + "/" + shortName
 
-		fileBytes, err := ioutil.ReadFile(fullName)
+		thisConfig, err := readConfigFIle(fullName)
 		if err != nil {
 			fmt.Printf("Failed to read config file %v ", fullName)
 			continue
 		}
-
-		// First try to read as TOML ...
-		dec := json.NewDecoder(toml.New(bytes.NewBuffer(fileBytes)))
-		tomlErr := dec.Decode(&thisConfig)
-
-		if tomlErr != nil {
-			// ... then try read as JSON
-			if err := json.Unmarshal(fileBytes, &thisConfig); err != nil {
-				fmt.Printf("Failed to parse %v\n", fullName)
-				continue
-			}
-		}
-
-		fmt.Println("Read " + fullName)
 
 		updateGlobalValues(thisConfig)
 	}
@@ -100,7 +107,7 @@ func readConfigFiles(confFlag *string) (err error) {
 }
 
 func updateGlobalValues(configFromFile RootConfig) {
-	// Only overwrite if values are set
+	// Only add if values are not set
 	if configFromFile.Address != "" {
 		Config.Address = configFromFile.Address
 	}
@@ -132,10 +139,11 @@ func updateGlobalValues(configFromFile RootConfig) {
 }
 
 func readConfig() {
-	confFlag := flag.String("c", "", "Configuration directory, containing *.conf files. Default: Current directory.")
+	thisDir, _ := os.Getwd()
+	confDir := flag.String("c", thisDir, "Configuration directory, containing *.conf files. Default: Current directory.")
 	measureTime := flag.Bool("t", false, "Measure time, Default: false.")
 	flag.Parse()
 	MeasureTime = *measureTime
-	fmt.Printf("Configuration directory: %v, MeasureTime: %v\n", *confFlag, MeasureTime)
-	readConfigFiles(confFlag)
+	fmt.Printf("Configuration directory: %v, MeasureTime: %v\n", *confDir, MeasureTime)
+	readConfigFiles(confDir)
 }

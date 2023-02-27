@@ -3,7 +3,10 @@ module github.com/mnomn/route2cloud
 go 1.15
 
 require (
-	github.com/eclipse/paho.mqtt.golang v1.1.1
-	github.com/gorilla/mux v1.7.0
-	github.com/komkom/toml v0.0.0-20210317065440-24f427ca88cc
+	github.com/eclipse/paho.mqtt.golang v1.4.2
+	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/komkom/toml v0.1.2
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
 )
