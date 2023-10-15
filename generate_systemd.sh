@@ -6,17 +6,17 @@ then
     UU=$1
 fi
 
-filename=route2cloud@$UU.service
+filename=recaller@$UU.service
 
 echo "Generating $filename."
 
 
 echo "[Unit]
-Description=route2cloud
+Description=recaller
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/route2cloud
+ExecStart=/usr/local/bin/recaller
 
 [Install]
 WantedBy=multi-user.target

@@ -8,7 +8,7 @@ ARG1=$1
 INSTALL_PATH=/usr/local
 
 # Target name
-PROG_NAME=route2cloud
+PROG_NAME=recaller
 
 SYSTEMD_PATH=/etc/systemd/system/
 
@@ -21,7 +21,7 @@ mv ${PROG_NAME} ${INSTALL_PATH}/bin/${PROG_NAME}
 
     echo "
 [Unit]
-Description=route2cloud
+Description=recaller
 After=network.target
 
 [Service]

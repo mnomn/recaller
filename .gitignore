@@ -13,6 +13,7 @@
 
 #OLAA
 route2cloud
+recaller
 *.service
 local_*
 

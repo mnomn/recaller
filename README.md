@@ -1,6 +1,6 @@
-# Route2Cloud
+# Recaller
 
-Route messages from small devices (IoT) in a local network to external servers which requires protocols and security not supported by the device.
+Connect small devices (IoT) in a local network to servers which requires protocols and security not supported by the device.
 
 This service listens to insecure http POST or PUT and re-sends messages to another host. The resend can append security and use a different schema: http, https or mqtt. It is also possible to add username and password, http headers or certificates.
 
@@ -8,17 +8,17 @@ The incoming request body must be in JSON format. By default the body is resent 
 
 ## Build
 
-Bild with standard go tools. For example `go build` or cross compile `env GOOS=linux GOARCH=arm GOARM=5 go build -o route2cloud`
+Bild with standard go tools. For example `go build` or cross compile `env GOOS=linux GOARCH=arm GOARM=5 go build -o recaller`
 
 It is also possible to use Makefile to build and install. For example `make install_pi`, which is a raspbery pi specific build and install target.
 
 ## Install
 
-Copy the binary route2cloud to the target system and run it.
+Copy the binary recaller to the target system and run it.
 
 ## Configuration
 
-Configuration is defined in one or many files located in the config directory. Set config dir with "-d": `route2cloud -d /my/conf/dir`. All files with .conf will be red and they can be in toml or json format. See examples in configuration_files directory or below.
+Configuration is defined in one or many files located in the config directory. Set config dir with "-d": `recaller -d /my/conf/dir`. All files with .conf will be red and they can be in toml or json format. See examples in configuration_files directory or below.
 
 ### Top level configuration
 
@@ -33,7 +33,7 @@ The "routes" is a list of rules for how to resend requests.
 ## Examples
 
 ```toml
-# File: "route2cloud.conf"
+# File: "recaller.conf"
 
 username="user1"
 password="password1"

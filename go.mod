@@ -1,4 +1,4 @@
-module github.com/mnomn/route2cloud
+module github.com/mnomn/recaller
 
 go 1.15
 

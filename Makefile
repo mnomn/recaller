@@ -1,6 +1,6 @@
 
 src = $(wildcard *.go)
-prog = route2cloud
+prog = recaller
 .PHONY: build_rpi install test all
 
 # Default values for remote system
@@ -19,7 +19,7 @@ build_rpi:
 	env GOOS=linux GOARCH=arm GOARM=5 go build
 
 install:
-	go install route2cloud
+	go install recaller
 
 install_rpi: build_rpi
 	$(info "REMOTE_HOST: $(REMOTE_HOST)" )
