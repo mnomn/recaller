@@ -13,7 +13,8 @@
 
 #OLAA
 route2cloud
-recaller
+/cmd/recaller/recaller.exe
+/cmd/recaller/recaller
 *.service
 local_*
 

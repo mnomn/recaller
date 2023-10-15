@@ -2,13 +2,15 @@
 
 Connect small devices (IoT) in a local network to servers which requires protocols and security not supported by the device.
 
-This service listens to insecure http POST or PUT and re-sends messages to another host. The resend can append security and use a different schema: http, https or mqtt. It is also possible to add username and password, http headers or certificates.
+This service listens to insecure http POST or PUT and re-sends messages to another host. The resend can use a different schema: http, https or mqtt. It is also possible to add security like username and password, http headers or certificates.
 
 The incoming request body must be in JSON format. By default the body is resent unmodified in the outgoing request. It is posible to reformat the outgoing body with a template and overwrite Content-Type.
 
 ## Build
 
-Bild with standard go tools. For example `go build` or cross compile `env GOOS=linux GOARCH=arm GOARM=5 go build -o recaller`
+Bild with standard go tools.
+
+Command line: `go build cmd/recaller`. To cross compile, add parameters: `env GOOS=linux GOARCH=arm GOARM=5 go build cmd/recaller -o recaller `.
 
 It is also possible to use Makefile to build and install. For example `make install_pi`, which is a raspbery pi specific build and install target.
 
@@ -18,7 +20,7 @@ Copy the binary recaller to the target system and run it.
 
 ## Configuration
 
-Configuration is defined in one or many files located in the config directory. Set config dir with "-d": `recaller -d /my/conf/dir`. All files with .conf will be red and they can be in toml or json format. See examples in configuration_files directory or below.
+Configuration is defined in one or many files located in the config directory. Set config dir with "-d": `recaller -d /my/conf/dir`. All files with .conf will be red and they can be in toml or json format. See examples in configs directory or below.
 
 ### Top level configuration
 

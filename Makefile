@@ -10,13 +10,13 @@ REMOTE_HOST ?= raspberrypi
 
 build:
 	$(info "BUILD for this machine")
-	go build
+	go build cmd/recaller
 
 go_fmt:
 	go fmt
 
 build_rpi:
-	env GOOS=linux GOARCH=arm GOARM=5 go build
+	env GOOS=linux GOARCH=arm GOARM=5 go build cmd/recaller
 
 install:
 	go install recaller
@@ -24,7 +24,7 @@ install:
 install_rpi: build_rpi
 	$(info "REMOTE_HOST: $(REMOTE_HOST)" )
 	scp $(prog) "$(REMOTE_HOST):"
-	scp install_r2c.sh "$(REMOTE_HOST):"
+	scp scripts/install_r2c.sh "$(REMOTE_HOST):"
 	ssh $(REMOTE_HOST) "sudo bash install_r2c.sh -r"
 
 test:

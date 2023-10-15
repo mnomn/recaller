@@ -10,7 +10,6 @@ filename=recaller@$UU.service
 
 echo "Generating $filename."
 
-
 echo "[Unit]
 Description=recaller
 After=network.target

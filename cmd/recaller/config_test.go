@@ -5,7 +5,7 @@ import (
 )
 
 func TestConfigFolder(t *testing.T) {
-	folder := "./configuration_files"
+	folder := "./../../configs"
 	readConfigFiles(&folder)
 	if Config.Routes == nil {
 		t.Errorf("Cannot handle config folder (nil)\n")
