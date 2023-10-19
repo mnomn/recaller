@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -53,7 +52,7 @@ func normalizeInPath(in *string) {
 func readConfigFIle(fullName string) (RootConfig, error) {
 	var thisConfig RootConfig
 	var err error
-	fileBytes, err := ioutil.ReadFile(fullName)
+	fileBytes, err := os.ReadFile(fullName)
 	if err != nil {
 		err = fmt.Errorf("Failed to read config file %v", fullName)
 		return thisConfig, err
@@ -78,7 +77,7 @@ func readConfigFIle(fullName string) (RootConfig, error) {
 func readConfigFiles(confDir *string) (err error) {
 	err = nil
 
-	files, err := ioutil.ReadDir(*confDir)
+	files, err := os.ReadDir(*confDir)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
