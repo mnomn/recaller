@@ -73,3 +73,48 @@ A post to `http://user1:password1@<ip>:8222/test2` will be re-sent as mqtt to lo
 
 A post to `http://user1:password1@<ip>:8222/test3` will be re-sent as plain text, not json. The bodyTemplate is used to create the outgoing body. For example incoming json `{"sensor":"S4","values":{"T":23.4,"unit":"C"}}` will be converted to text `sensor_values,sensor_id=S4 temperature=23.4"`.
 If the incoming json does not fit the template, no message will be sent.
+
+## AWS IoT Core
+
+To send data to aws we can use MQTT and IoT Core.
+
+In AWS web console, got to IoT Core and create a **thing** using **connect -> connect one device**. The policy shell look something like this:
+
+``` json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "iot:Connect",
+      "Resource": "arn:aws:iot:eu-north-1:012345678901:client/recaller"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:Publish",
+      "Resource": "arn:aws:iot:eu-north-1:012345678901:topic/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iot:RetainPublish",
+      "Resource": "arn:aws:iot:eu-north-1:012345678901:topic/*"
+    }
+  ]
+}
+```
+Note the mqtt client id is ***recaller*** and can be used in the policy. It is also possible to specify certain topics, but in the above example all topics are allowed.
+
+Download certificates and key files.
+
+Configure recaller to use the cert files.
+
+``` toml
+[[Routes]]
+in="/testAws"
+out="mqtts://abcdef1234567890-ats.iot.eu-north-1.amazonaws.com"
+topic="some/topic"
+privateKeyFile="/path/to/private.pem.key"
+certFile="/path/to/certificate.pem.crt"
+rootCaFile="/path/to/AmazonRootCA1.pem"
+```
+Now you can post mqtt messages to AWS IoT core.

@@ -142,11 +142,11 @@ func sendMqtt(postString string, route Route) error {
 		opts.SetPassword(route.Password)
 	}
 
-	cid := "ClientID"
+	cid := "recaller"
 	opts.SetClientID(cid)
 	if route.RoootCaFile != "" || route.CertFile != "" || route.PrivateKeyFile != "" {
 		if Config.Debug > 1 || route.Debug > 1 {
-			fmt.Printf("Mqtt cert files%v\n%v\n%v\n", route.RoootCaFile, route.CertFile, route.PrivateKeyFile)
+			fmt.Printf("Mqtt cert files %v, %v, %v\n", route.RoootCaFile, route.CertFile, route.PrivateKeyFile)
 		}
 		tlsConf, err := makeTlsConfig(route.RoootCaFile, route.CertFile, route.PrivateKeyFile)
 		if err != nil {
@@ -250,7 +250,7 @@ func convertToMqttServerString(configuredOut string) (string, error) {
 		if strings.Index(parsedUrl.Host, ":") < 0 {
 			port = ":8883"
 		}
-		return fmt.Sprintf("tcp://%v%v", parsedUrl.Host, port), nil
+		return fmt.Sprintf("tls://%v%v", parsedUrl.Host, port), nil
 	}
 
 	return configuredOut, nil

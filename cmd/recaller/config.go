@@ -83,6 +83,7 @@ func readConfigFiles(confDir *string) (err error) {
 		os.Exit(1)
 	}
 
+	confFiles := 0
 	for _, file := range files {
 		var thisConfig RootConfig
 
@@ -95,11 +96,16 @@ func readConfigFiles(confDir *string) (err error) {
 
 		thisConfig, err := readConfigFIle(fullName)
 		if err != nil {
-			fmt.Printf("Failed to read config file %v ", fullName)
+			fmt.Printf("Failed to read config file %v err: %v", fullName, err)
 			continue
 		}
 
+		confFiles++
 		updateGlobalValues(thisConfig)
+	}
+
+	if confFiles == 0 {
+		fmt.Println("There are no config files!")
 	}
 
 	return //err
