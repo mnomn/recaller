@@ -15,7 +15,7 @@ func TestCreateServerString(t *testing.T) {
 	var mqttStrAfter = "tcp://abc.df:1883"
 
 	var mqttsStr = "mqtts://abc.df"
-	var mqttsStrAfter = "tcp://abc.df:8883"
+	var mqttsStrAfter = "tls://abc.df:8883"
 
 	var mqttPortStr = "mqtt://abc.df:1876"
 	var mqttPortStrAfter = "tcp://abc.df:1876"

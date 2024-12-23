@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,11 +11,14 @@ import (
 )
 
 type RootConfig struct {
-	Address  string  `json:"address"`
-	Username string  `json:"username"`
-	Password string  `json:"password"`
-	Debug    int     `json:"debug"`
-	Routes   []Route `json:"routes"`
+	Address        string          `json:"address"`
+	Username       string          `json:"username"`
+	Password       string          `json:"password"`
+	Debug          int             `json:"debug"`
+	Routes         []Route         `json:"routes"`
+	Triggers       []Trigger       `json:"trigger"`
+	Actions        []Action        `json:"action"`
+	TriggerActions []TriggerAction `json:"trigger-actions"`
 }
 
 type Route struct {
@@ -33,6 +35,27 @@ type Route struct {
 	CertFile       string   `json:"certFile"`
 	RoootCaFile    string   `json:"rootCaFile"`
 	Debug          int      `json:"debug"`
+}
+
+type Trigger struct {
+	FileName string `json:"-"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Time     string `json:"time"`
+}
+
+type Action struct {
+	FileName string `json:"-"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	Method   string `json:"method"`
+	Url      string `json:"url"`
+}
+
+type TriggerAction struct {
+	Name    string   `json:"name"`
+	Trigger string   `json:"trigger"`
+	Actions []string `json:"actions"`
 }
 
 // Read one or many config fies and store here
@@ -52,20 +75,21 @@ func normalizeInPath(in *string) {
 func readConfigFIle(fullName string) (RootConfig, error) {
 	var thisConfig RootConfig
 	var err error
-	fileBytes, err := os.ReadFile(fullName)
+	reader, err := os.Open(fullName)
 	if err != nil {
-		err = fmt.Errorf("Failed to read config file %v", fullName)
+		err = fmt.Errorf("failed to read config file %v", fullName)
 		return thisConfig, err
 	}
 
 	// First try to read as TOML ...
-	dec := json.NewDecoder(toml.New(bytes.NewBuffer(fileBytes)))
+	dec := json.NewDecoder(toml.New(reader))
 	tomlErr := dec.Decode(&thisConfig)
 
 	if tomlErr != nil {
 		// ... then try read as JSON
-		if err := json.Unmarshal(fileBytes, &thisConfig); err != nil {
-			err = fmt.Errorf("Failed to parse %v", fullName)
+		reader2, _ := os.Open(fullName)
+		if err := json.NewDecoder(reader2).Decode(&thisConfig); err != nil {
+			err = fmt.Errorf("failed to parse %v", fullName)
 			return thisConfig, err
 		}
 	}
@@ -141,6 +165,10 @@ func updateGlobalValues(configFromFile RootConfig) {
 		Config.Routes = append(Config.Routes, route)
 		fmt.Printf("  route %v -> %v\n", rawIn, route.Out)
 	}
+
+	Config.Triggers = append(Config.Triggers, configFromFile.Triggers...)
+	Config.Actions = append(Config.Actions, configFromFile.Actions...)
+	Config.TriggerActions = append(Config.TriggerActions, configFromFile.TriggerActions...)
 }
 
 func readConfig() {
